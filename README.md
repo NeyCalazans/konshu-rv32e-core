@@ -16,6 +16,6 @@ source run_tb.tcl
 - `docs/` – documentação (issues do decoder, guia da TB, changelog).
 
 ## Autores
-Mateus Mendes Sodré
-Rodrigo Vinícius Mendonça Pereira
-Ney Calazans
+- Mateus Mendes Sodré
+- Rodrigo Vinícius Mendonça Pereira
+- Ney Calazans
