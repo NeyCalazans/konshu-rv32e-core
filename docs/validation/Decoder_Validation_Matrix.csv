@@ -1,0 +1,48 @@
+Instruction,Name,FMT,Opcode (bin),funct3,funct7,Description,imm_src,addr_src,alu_op,alu_src,result_src,branch,jump,reg_write,mem_write,notes
+add,ADD,R,110011,0,0,rd = rs1 + rs2,R,REG,ADD,RS2,ALU,0,0,1,0,
+sub,SUB,R,110011,0,100000,rd = rs1 - rs2,R,REG,SUB,RS2,ALU,0,0,1,0,funct7=0100000 (bit 30=1)
+xor,XOR,R,110011,100,0,rd = rs1 ^ rs2,R,REG,XOR,RS2,ALU,0,0,1,0,
+or,OR,R,110011,110,0,rd = rs1 | rs2,R,REG,OR,RS2,ALU,0,0,1,0,
+and,AND,R,110011,111,0,rd = rs1 & rs2,R,REG,AND,RS2,ALU,0,0,1,0,
+sll,Shift  Left Logical,R,110011,1,0,rd = rs1 << rs2[4:0],R,REG,SLL,RS2,ALU,0,0,1,0,
+srl,Shift Right Logical,R,110011,101,0,rd = rs1 >> rs2[4:0] (logical),R,REG,SRL,RS2,ALU,0,0,1,0,
+sra,Shift Right Arith*,R,110011,101,100000,rd = rs1 >>> rs2[4:0] (arith),R,REG,SRA,RS2,ALU,0,0,1,0,
+slt,Set Less Than,R,110011,10,0,rd = (rs1 < rs2)?1:0 (signed),R,REG,SLT,RS2,ALU,0,0,1,0,
+sltu,Set Less Than,(U) R,110011,11,0,rd = (rs1 < rs2)?1:0 (unsigned),R,REG,SLTU,RS2,ALU,0,0,1,0,
+,,,,,,,,,,,,,,,,
+addi,ADD Immediate,I,10011,0,-,rd = rs1 + imm12,I,REG,ADD,IMM,ALU,0,0,1,0,
+xori,XOR Immediate,I,10011,100,-,rd = rs1 ^ imm12,I,REG,XOR,IMM,ALU,0,0,1,0,
+ori,OR Immediate,I,10011,110,-,rd = rs1 | imm12,I,REG,OR,IMM,ALU,0,0,1,0,
+andi,AND Immediate,I,10011,111,-,rd = rs1 & imm12,I,REG,AND,IMM,ALU,0,0,1,0,
+slli,Shift Left Logical Imm,I,10011,1,0,rd = rs1 << shamt,I,REG,SLL,IMM,ALU,0,0,1,0,shamt=imm[4:0]
+srli,Shift Right Logical Imm,I,10011,101,0,rd = rs1 >> shamt (logical),I,REG,SRL,IMM,ALU,0,0,1,0,shamt=imm[4:0]
+srai,Shift Right Arith Imm,I,10011,101,100000,rd = rs1 >>> shamt (arith),I,REG,SRA,IMM,ALU,0,0,1,0,shamt=imm[4:0]
+slti,Set Less Than Imm,I,10011,10,-,rd = (rs1 < imm)?1:0 (signed),I,REG,SLT,IMM,ALU,0,0,1,0,
+sltiu,Set Less Than Imm,(U) I,10011,11,-,rd = (rs1 < imm)?1:0 (unsigned),I,REG,SLTU,IMM,ALU,0,0,1,0,
+,,,,,,,,,,,,,,,,
+lb,Load Byte,I,11,0,-,rd = signext(M[rs1+imm][7:0]),I,REG,ADD,IMM,MEM,0,0,1,0,
+lh,Load Half,I,11,1,-,rd = signext(M[rs1+imm][15:0]),I,REG,ADD,IMM,MEM,0,0,1,0,
+lw,Load Word,I,11,10,-,rd = M[rs1+imm][31:0],I,REG,ADD,IMM,MEM,0,0,1,0,
+lbu,Load Byte,(U) I,11,100,-,rd = zeroext(M[rs1+imm][7:0]),I,REG,ADD,IMM,MEM,0,0,1,0,zero-extends
+lhu,Load Half,(U) I,11,101,-,rd = zeroext(M[rs1+imm][15:0]),I,REG,ADD,IMM,MEM,0,0,1,0,zero-extends
+,,,,,,,,,,,,,,,,
+sb,Store Byte,S,100011,0,-,M[rs1+imm][7:0]   = rs2[7:0],S,REG,ADD,IMM,ALU,0,0,0,1,rs2 -> memory
+sh,Store Half,S,100011,1,-,M[rs1+imm][15:0]  = rs2[15:0],S,REG,ADD,IMM,ALU,0,0,0,1,
+sw,Store Word,S,100011,10,-,M[rs1+imm][31:0]  = rs2[31:0],S,REG,ADD,IMM,ALU,0,0,0,1,
+,,,,,,,,,,,,,,,,
+beq,Branch --,B,1100011,0,-,if (rs1==rs2) PC+=imm,B,PC,COMPARE,RS2,ALU,1,0,0,0,PC-target computed with PC + imm
+bne,Branch !,B,1100011,1,-,if (rs1!=rs2) PC+=imm,B,PC,COMPARE,RS2,ALU,1,0,0,0,PC-target computed with PC + imm
+blt,Branch <,B,1100011,100,-,if (rs1< rs2) PC+=imm (signed),B,PC,COMPARE,RS2,ALU,1,0,0,0,PC-target computed with PC + imm
+bge,Branch >,B,1100011,101,-,if (rs1>=rs2) PC+=imm (signed),B,PC,COMPARE,RS2,ALU,1,0,0,0,PC-target computed with PC + imm
+bltu,Branch ≤,(U) B,1100011,110,-,if (rs1< rs2) PC+=imm (unsigned),B,PC,COMPARE,RS2,ALU,1,0,0,0,PC-target computed with PC + imm
+bgeu,Branch ≥,(U) B,1100011,111,-,if (rs1>=rs2) PC+=imm (unsigned),B,PC,COMPARE,RS2,ALU,1,0,0,0,PC-target computed with PC + imm
+,,,,,,,,,,,,,,,,
+jal,Jump And Link,J,1101111,-,-,rd = PC+4; PC += imm,J,PC,ADD,PC,PC4,0,1,1,0,
+jalr,Jump And Link Reg,I,1100111,0,-,rd = PC+4; PC = (rs1+imm)&~1,I,REG,ADD,IMM,PC4,0,1,1,0,MASK LSB=0 per spec
+,,,,,,,,,,,,,,,,
+lui,Load Upper Imm,U,110111,-,-,rd = imm<<12,U,IMM,PASS_IMM,IMM,ALU,0,0,1,0,
+auipc,Add Upper Imm to PC,U,10111,-,-,rd = PC + imm<<12,U,PC,ADD,IMM,ALU,0,0,1,0,
+,,,,,,,,,,,,,,,,
+fence,Memory Barriet Instr,I,1111,0,-,Memory fence (no reg write),I,REG,PASS_B,RS2,ALU,0,0,0,0,treat as NOP in simple cores
+ecall,Environment Call,I,1110011,0,imm=0,Environment call,I,REG,PASS_B,RS2,ALU,0,0,0,0,no reg write; trap to OS if present
+ebreak,Environment Break,I,1110011,0,imm=1,Breakpoint,I,REG,PASS_B,RS2,ALU,0,0,0,0,no reg write; trap to debugger
