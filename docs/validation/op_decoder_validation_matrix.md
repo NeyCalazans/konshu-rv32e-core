@@ -1,0 +1,54 @@
+# op_decoder validation matrix
+
+Legend:
+
+- **imm_src**: R/I/S/B/U/J
+- **addr_src**: PC/REG/IMM
+- **alu_op**: ADD/SUB/AND/OR/XOR/SLL/SRL/SRA/SLT/SLTU/PASS_IMM/PASS_B/COMPARE
+- **alu_src**: RS2/IMM/PC
+- **result_src**: ALU/MEM/PC4/IMM
+
+---
+
+|   idx | mnemonic   | fmt   |   opcode(bin) | funct3   | funct7   | description                      | imm_src   | addr_src   | alu_op   | alu_src   | result_src   |   branch |   jump |   reg_write |   mem_write | notes                               |
+|------:|:-----------|:------|--------------:|:---------|:---------|:---------------------------------|:----------|:-----------|:---------|:----------|:-------------|---------:|-------:|------------:|------------:|:------------------------------------|
+|     1 | add        | R     |       0110011 | 000      | 0000000  | rd = rs1 + rs2                   | R         | REG        | ADD      | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|     2 | sub        | R     |       0110011 | 000      | 0100000  | rd = rs1 - rs2                   | R         | REG        | SUB      | RS2       | ALU          |        0 |      0 |           1 |           0 | funct7=0100000 (bit 30=1)           |
+|     3 | xor        | R     |       0110011 | 100      | 0000000  | rd = rs1 ^ rs2                   | R         | REG        | XOR      | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|     4 | or         | R     |       0110011 | 110      | 0000000  | rd = rs1 | rs2                   | R         | REG        | OR       | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|     5 | and        | R     |       0110011 | 111      | 0000000  | rd = rs1 & rs2                   | R         | REG        | AND      | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|     6 | sll        | R     |       0110011 | 001      | 0000000  | rd = rs1 << rs2[4:0]             | R         | REG        | SLL      | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|     7 | srl        | R     |       0110011 | 101      | 0000000  | rd = rs1 >> rs2[4:0] (logical)   | R         | REG        | SRL      | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|     8 | sra        | R     |       0110011 | 101      | 0100000  | rd = rs1 >>> rs2[4:0] (arith)    | R         | REG        | SRA      | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|     9 | slt        | R     |       0110011 | 010      | 0000000  | rd = (rs1 < rs2)?1:0 (signed)    | R         | REG        | SLT      | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    10 | sltu       | R     |       0110011 | 011      | 0000000  | rd = (rs1 < rs2)?1:0 (unsigned)  | R         | REG        | SLTU     | RS2       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    11 | addi       | I     |       0010011 | 000      | -        | rd = rs1 + imm12                 | I         | REG        | ADD      | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    12 | xori       | I     |       0010011 | 100      | -        | rd = rs1 ^ imm12                 | I         | REG        | XOR      | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    13 | ori        | I     |       0010011 | 110      | -        | rd = rs1 | imm12                 | I         | REG        | OR       | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    14 | andi       | I     |       0010011 | 111      | -        | rd = rs1 & imm12                 | I         | REG        | AND      | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    15 | slli       | I     |       0010011 | 001      | 0000000  | rd = rs1 << shamt                | I         | REG        | SLL      | IMM       | ALU          |        0 |      0 |           1 |           0 | shamt=imm[4:0]                      |
+|    16 | srli       | I     |       0010011 | 101      | 0000000  | rd = rs1 >> shamt (logical)      | I         | REG        | SRL      | IMM       | ALU          |        0 |      0 |           1 |           0 | shamt=imm[4:0]                      |
+|    17 | srai       | I     |       0010011 | 101      | 0100000  | rd = rs1 >>> shamt (arith)       | I         | REG        | SRA      | IMM       | ALU          |        0 |      0 |           1 |           0 | shamt=imm[4:0]                      |
+|    18 | slti       | I     |       0010011 | 010      | -        | rd = (rs1 < imm)?1:0 (signed)    | I         | REG        | SLT      | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    19 | sltiu      | I     |       0010011 | 011      | -        | rd = (rs1 < imm)?1:0 (unsigned)  | I         | REG        | SLTU     | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    20 | lb         | I     |       0000011 | 000      | -        | rd = signext(M[rs1+imm][7:0])    | I         | REG        | ADD      | IMM       | MEM          |        0 |      0 |           1 |           0 |                                     |
+|    21 | lh         | I     |       0000011 | 001      | -        | rd = signext(M[rs1+imm][15:0])   | I         | REG        | ADD      | IMM       | MEM          |        0 |      0 |           1 |           0 |                                     |
+|    22 | lw         | I     |       0000011 | 010      | -        | rd = M[rs1+imm][31:0]            | I         | REG        | ADD      | IMM       | MEM          |        0 |      0 |           1 |           0 |                                     |
+|    23 | lbu        | I     |       0000011 | 100      | -        | rd = zeroext(M[rs1+imm][7:0])    | I         | REG        | ADD      | IMM       | MEM          |        0 |      0 |           1 |           0 | zero-extends                        |
+|    24 | lhu        | I     |       0000011 | 101      | -        | rd = zeroext(M[rs1+imm][15:0])   | I         | REG        | ADD      | IMM       | MEM          |        0 |      0 |           1 |           0 | zero-extends                        |
+|    25 | sb         | S     |       0100011 | 000      | -        | M[rs1+imm][7:0]   = rs2[7:0]     | S         | REG        | ADD      | IMM       | ALU          |        0 |      0 |           0 |           1 | rs2 -> memory                       |
+|    26 | sh         | S     |       0100011 | 001      | -        | M[rs1+imm][15:0]  = rs2[15:0]    | S         | REG        | ADD      | IMM       | ALU          |        0 |      0 |           0 |           1 |                                     |
+|    27 | sw         | S     |       0100011 | 010      | -        | M[rs1+imm][31:0]  = rs2[31:0]    | S         | REG        | ADD      | IMM       | ALU          |        0 |      0 |           0 |           1 |                                     |
+|    28 | beq        | B     |       1100011 | 000      | -        | if (rs1==rs2) PC+=imm            | B         | PC         | COMPARE  | RS2       | ALU          |        1 |      0 |           0 |           0 | PC-target computed with PC + imm    |
+|    29 | bne        | B     |       1100011 | 001      | -        | if (rs1!=rs2) PC+=imm            | B         | PC         | COMPARE  | RS2       | ALU          |        1 |      0 |           0 |           0 | PC-target computed with PC + imm    |
+|    30 | blt        | B     |       1100011 | 100      | -        | if (rs1< rs2) PC+=imm (signed)   | B         | PC         | COMPARE  | RS2       | ALU          |        1 |      0 |           0 |           0 | PC-target computed with PC + imm    |
+|    31 | bge        | B     |       1100011 | 101      | -        | if (rs1>=rs2) PC+=imm (signed)   | B         | PC         | COMPARE  | RS2       | ALU          |        1 |      0 |           0 |           0 | PC-target computed with PC + imm    |
+|    32 | bltu       | B     |       1100011 | 110      | -        | if (rs1< rs2) PC+=imm (unsigned) | B         | PC         | COMPARE  | RS2       | ALU          |        1 |      0 |           0 |           0 | PC-target computed with PC + imm    |
+|    33 | bgeu       | B     |       1100011 | 111      | -        | if (rs1>=rs2) PC+=imm (unsigned) | B         | PC         | COMPARE  | RS2       | ALU          |        1 |      0 |           0 |           0 | PC-target computed with PC + imm    |
+|    34 | jal        | J     |       1101111 | -        | -        | rd = PC+4; PC += imm             | J         | PC         | ADD      | PC        | PC4          |        0 |      1 |           1 |           0 |                                     |
+|    35 | jalr       | I     |       1100111 | 000      | -        | rd = PC+4; PC = (rs1+imm)&~1     | I         | REG        | ADD      | IMM       | PC4          |        0 |      1 |           1 |           0 | MASK LSB=0 per spec                 |
+|    36 | lui        | U     |       0110111 | -        | -        | rd = imm<<12                     | U         | IMM        | PASS_IMM | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    37 | auipc      | U     |       0010111 | -        | -        | rd = PC + imm<<12                | U         | PC         | ADD      | IMM       | ALU          |        0 |      0 |           1 |           0 |                                     |
+|    38 | fence      | I     |       0001111 | 000      | -        | Memory fence (no reg write)      | I         | REG        | PASS_B   | RS2       | ALU          |        0 |      0 |           0 |           0 | treat as NOP in simple cores        |
+|    39 | ecall      | I     |       1110011 | 000      | imm=0    | Environment call                 | I         | REG        | PASS_B   | RS2       | ALU          |        0 |      0 |           0 |           0 | no reg write; trap to OS if present |
+|    40 | ebreak     | I     |       1110011 | 000      | imm=1    | Breakpoint                       | I         | REG        | PASS_B   | RS2       | ALU          |        0 |      0 |           0 |           0 | no reg write; trap to debugger      |

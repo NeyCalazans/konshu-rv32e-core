@@ -1,0 +1,32 @@
+# Vivado / XSim
+*.jou
+*.log
+*.str
+*.wdb
+*.pb
+*.dcp
+*.rpx
+*.html
+*.xml
+*.xpr
+*.xds
+*.ip_user_files/
+*.runs/
+*.cache/
+*.hw/
+*.sim/
+*.gen/
+*.srcs/sim_1/
+*.webtalk/
+.xil/
+XilDefaultLib/
+xsim.dir/
+*.ltx
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Outros
+.vscode/
+.idea/
