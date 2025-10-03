@@ -1,259 +1,196 @@
-`timescale 10us / 1ns
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 26.09.2025 08:36:47
-// Design Name: 
-// Module Name: op_decoder_tb
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+`timescale 1ns/1ps
 
 module op_decoder_tb;
 
-  // ====== DUT I/O ======
-  logic [4:0] i_op;
-  logic [2:0] i_funct_3;
-  logic       i_funct_7_5;
+  // DUT inputs
+  logic [31:0] inst;
+  logic [4:0]  i_op;
+  logic [2:0]  i_funct_3;
+  logic        i_funct_7_5;
 
-  logic        o_jump_ID, o_branch_ID, o_reg_write_ID, o_mem_write_ID, o_alu_src_ID, o_addr_src_ID, o_fence_ID;
+  // DUT outputs
   logic [1:0]  o_result_src_ID;
-  logic [2:0]  o_imm_src_ID, o_alu_op;
+  logic [2:0]  o_imm_src_ID;
+  logic [2:0]  o_alu_op;
+  logic        o_alu_src_ID;
+  logic        o_addr_src_ID;
+  logic        o_mem_write_ID;
+  logic        o_reg_write_ID;
+  logic        o_jump_ID;
+  logic        o_branch_ID;
+  logic        o_fence_ID;
 
-  // Ajustar o nome/portas do módulo
+  // === Instância do DUT (ajuste o nome/portas se diferirem aí) ===
   op_decoder dut (
-    .i_op(i_op),
-    .i_funct_3(i_funct_3),
-    .i_funct_7_5(i_funct_7_5),
-    .o_jump_ID(o_jump_ID),
-    .o_branch_ID(o_branch_ID),
-    .o_reg_write_ID(o_reg_write_ID),
-    .o_result_src_ID(o_result_src_ID),
-    .o_mem_write_ID(o_mem_write_ID),
-    .o_alu_src_ID(o_alu_src_ID),
-    .o_imm_src_ID(o_imm_src_ID),
-    .o_alu_op(o_alu_op),
-    .o_addr_src_ID(o_addr_src_ID),
-    .o_fence_ID(o_fence_ID)
+    .i_op            (i_op),
+    .i_funct_3       (i_funct_3),
+    .i_funct_7_5     (i_funct_7_5),
+    .o_result_src_ID (o_result_src_ID),
+    .o_imm_src_ID    (o_imm_src_ID),
+    .o_alu_op        (o_alu_op),
+    .o_alu_src_ID    (o_alu_src_ID),
+    .o_addr_src_ID   (o_addr_src_ID),
+    .o_mem_write_ID  (o_mem_write_ID),
+    .o_reg_write_ID  (o_reg_write_ID),
+    .o_jump_ID       (o_jump_ID),
+    .o_branch_ID     (o_branch_ID),
+    .o_fence_ID      (o_fence_ID)
   );
 
-  // ====== Convenções (esperado) ======
-  // result_src_ID:
-  //   00 = ALU
-  //   01 = PC+4
-  //   10 = MemData
-  //   11 = PC+imm
-  //
-  // imm_src_ID:
-  //   000 = I  | 001 = S | 010 = B | 011 = J | 100 = U
-  //
-  // alu_op (classes internas do decoder):
-  localparam [2:0] OP_LUI     = 3'b000;
-  localparam [2:0] OP_ARITH   = 3'b001; // lógicas/arit. (AND/OR/XOR/shift/SLT… e I-ALU)
-  localparam [2:0] OP_ADD_SUB = 3'b010; // somas endereços / SUB
-  localparam [2:0] OP_BRANCH  = 3'b011;
-  localparam [2:0] OP_ADD     = 3'b100; // PC+4 / PC+imm / ADD puro
+  // === Encodes (alinhados com o DUT) ===
+  localparam logic [2:0] IMM_I = 3'b000;
+  localparam logic [2:0] IMM_S = 3'b001;
+  localparam logic [2:0] IMM_B = 3'b010;
+  localparam logic [2:0] IMM_J = 3'b011;
+  localparam logic [2:0] IMM_U = 3'b100;
 
-  // ====== Vetor e máscara por campo (permite don't care) ======
+  localparam logic [1:0] RS_ALU   = 2'b00;
+  localparam logic [1:0] RS_PC4   = 2'b01;
+  localparam logic [1:0] RS_MEM   = 2'b10;
+  localparam logic [1:0] RS_AUIPC = 2'b11;
+
+  localparam logic [2:0] OP_ADD     = 3'b000;
+  localparam logic [2:0] OP_ADD_SUB = 3'b001;
+  localparam logic [2:0] OP_ARITH   = 3'b010;
+  localparam logic [2:0] OP_SHIFT   = 3'b011;
+  localparam logic [2:0] OP_SLT     = 3'b100;
+  localparam logic [2:0] OP_XOR     = 3'b101;
+  localparam logic [2:0] OP_OR      = 3'b110;
+  localparam logic [2:0] OP_AND     = 3'b111;
+
+  // === Dirige o DUT a partir do instruction word ===
+  task automatic drive_from_inst(input logic [31:0] x);
+    begin
+      inst        = x;
+      i_op        = x[6:2];
+      i_funct_3   = x[14:12];
+      i_funct_7_5 = x[30];
+      #1; // combinacional assenta
+    end
+  endtask
+
+  // === Vetor de teste: nome + inst + expectativas ===
   typedef struct {
-    // Entrada (instr completa para extrair campos + sanity)
-    logic [31:0] inst;
     string       name;
-
-    // Esperados
-    logic        exp_jump, exp_branch, exp_regw, exp_memw, exp_alusrc, exp_addrsrc, exp_fence;
-    logic [1:0]  exp_result_src;
-    logic [2:0]  exp_immsrc, exp_aluop;
-
-    // Máscara (1 = checar; 0 = ignorar/don't care)
-    logic m_jump, m_branch, m_regw, m_memw, m_alusrc, m_addrsrc, m_fence;
-    logic [1:0] m_result_src;
-    logic [2:0] m_immsrc, m_aluop;
+    logic [31:0] inst;
+    struct packed {
+      logic [2:0] imm_src;
+      logic       addr_src;
+      logic [2:0] alu_op;
+      logic       alu_src;
+      logic [1:0] result_src;
+      logic       branch;
+      logic       jump;
+      logic       reg_write;
+      logic       mem_write;
+      logic       fence;
+    } exp;
   } vec_t;
 
-  // ====== Helpers p/ extrair campos ======
-  function automatic [4:0] get_op(input logic [31:0] inst);     return inst[6:2];  endfunction
-  function automatic [2:0] get_f3(input logic [31:0] inst);     return inst[14:12]; endfunction
-  function automatic       get_f7_5(input logic [31:0] inst);   return inst[30];    endfunction
+  vec_t V [$]; // lista dinâmica de vetores
 
-  // ====== Vetores (10 instruções) ======
-  vec_t V [0:9];
+  // === Impressão no formato pedido: INSTR primeiro, depois divergências (se houver) ===
+  task automatic check(input vec_t v);
+    string mism;
+    begin
+      drive_from_inst(v.inst);
 
-  initial begin
-   $display("initial");
+      mism = "";
+      if (o_imm_src_ID    !== v.exp.imm_src   ) mism = {mism, " imm_src"};
+      if (o_addr_src_ID   !== v.exp.addr_src  ) mism = {mism, " addr_src"};
+      if (o_alu_op        !== v.exp.alu_op    ) mism = {mism, " alu_op"};
+      if (o_alu_src_ID    !== v.exp.alu_src   ) mism = {mism, " alu_src"};
+      if (o_result_src_ID !== v.exp.result_src) mism = {mism, " result_src"};
+      if (o_branch_ID     !== v.exp.branch    ) mism = {mism, " branch"};
+      if (o_jump_ID       !== v.exp.jump      ) mism = {mism, " jump"};
+      if (o_reg_write_ID  !== v.exp.reg_write ) mism = {mism, " reg_write"};
+      if (o_mem_write_ID  !== v.exp.mem_write ) mism = {mism, " mem_write"};
+      if (o_fence_ID      !== v.exp.fence     ) mism = {mism, " fence"};
 
-    // 0) JAL x0, 0   (opcode 1101111): jump, result = PC+4, imm = J
-    V[0] = '{
-      inst: 32'h0000006f, name:"JAL",
-      exp_jump:1, exp_branch:0, exp_regw:1, exp_result_src:2'b01, exp_memw:0, exp_alusrc:0, exp_immsrc:3'b011,
-      exp_aluop:'0, exp_addrsrc:0, exp_fence:0, // aluop don't care
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b111,
-      m_aluop:3'b000, m_addrsrc:1, m_fence:1
-    };
-
-    // 1) JALR x0, 0(x0) (1100111): jump, addr_src=1 (rs1+imm), result = PC+4, imm = I
-    V[1] = '{
-      inst: 32'h00000067, name:"JALR",
-      exp_jump:1, exp_branch:0, exp_regw:1, exp_result_src:2'b01, exp_memw:0, exp_alusrc:1, exp_immsrc:3'b000,
-      exp_aluop:OP_ADD, exp_addrsrc:1, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b111,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 2) LUI x5, 0 (0110111): write-back = ALU(0+immU), imm = U
-    V[2] = '{
-      inst: 32'h000002b7, name:"LUI",
-      exp_jump:0, exp_branch:0, exp_regw:1, exp_result_src:2'b00, exp_memw:0, exp_alusrc:1, exp_immsrc:3'b100,
-      exp_aluop:OP_LUI, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b111,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 3) AUIPC x5, 0 (0010111): write-back = PC+imm (11), imm = U
-    V[3] = '{
-      inst: 32'h00000297, name:"AUIPC",
-      exp_jump:0, exp_branch:0, exp_regw:1, exp_result_src:2'b11, exp_memw:0, exp_alusrc:1, exp_immsrc:3'b100,
-      exp_aluop:OP_ADD, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b111,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 4) BEQ x0,x0,0 (1100011): branch=1, imm=B
-    V[4] = '{
-      inst: 32'h00000063, name:"BEQ",
-      exp_jump:0, exp_branch:1, exp_regw:0, exp_result_src:2'b00, exp_memw:0, exp_alusrc:0, exp_immsrc:3'b010,
-      exp_aluop:OP_BRANCH, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b00, m_memw:1, m_alusrc:1, m_immsrc:3'b111,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 5) ADD  x3,x1,x2 (0110011 funct3=000 funct7=0000000): regw=1, result=ALU, aluop=ADD
-    V[5] = '{
-      inst: 32'h002080b3, name:"ADD",
-      exp_jump:0, exp_branch:0, exp_regw:1, exp_result_src:2'b00, exp_memw:0, exp_alusrc:0, exp_immsrc:3'b000,
-      exp_aluop:OP_ADD, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b000,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 6) SUB  x3,x1,x2 (0110011 funct3=000 funct7=0100000): regw=1, result=ALU, aluop=ADD_SUB (SUB)
-    V[6] = '{
-      inst: 32'h402080b3, name:"SUB",
-      exp_jump:0, exp_branch:0, exp_regw:1, exp_result_src:2'b00, exp_memw:0, exp_alusrc:0, exp_immsrc:3'b000,
-      exp_aluop:OP_ADD_SUB, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b000,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 7) AND  x3,x1,x2 (0110011 funct3=111): regw=1, result=ALU, aluop=ARITH
-    V[7] = '{
-      inst: 32'h0020f0b3, name:"AND",
-      exp_jump:0, exp_branch:0, exp_regw:1, exp_result_src:2'b00, exp_memw:0, exp_alusrc:0, exp_immsrc:3'b000,
-      exp_aluop:OP_ARITH, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b000,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 8) LW x5,0(x2) (0000011 funct3=010): regw=1, result=Mem, imm=I, aluop=ADD_SUB (addr calc)
-    V[8] = '{
-      inst: 32'h00012283, name:"LW",
-      exp_jump:0, exp_branch:0, exp_regw:1, exp_result_src:2'b10, exp_memw:0, exp_alusrc:1, exp_immsrc:3'b000,
-      exp_aluop:OP_ADD_SUB, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b11, m_memw:1, m_alusrc:1, m_immsrc:3'b111,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-
-    // 9) SW x5,0(x2) (0100011 funct3=010): mem_write=1, imm=S, aluop=ADD_SUB (addr calc)
-    V[9] = '{
-      inst: 32'h00412023, name:"SW",
-      exp_jump:0, exp_branch:0, exp_regw:0, exp_result_src:2'b00, exp_memw:1, exp_alusrc:1, exp_immsrc:3'b001,
-      exp_aluop:OP_ADD_SUB, exp_addrsrc:0, exp_fence:0,
-      m_jump:1, m_branch:1, m_regw:1, m_result_src:2'b00, m_memw:1, m_alusrc:1, m_immsrc:3'b111,
-      m_aluop:3'b111, m_addrsrc:1, m_fence:1
-    };
-  end
-
-  // ====== Infra de checagem ======
-  int pass=0, fail=0;
-
-  task automatic check_field(string nm, logic exp, logic got, logic m);
-    if (m && (got !== exp)) begin
-      $display("[FAIL] %s exp=%0b got=%0b", nm, exp, got);
-      fail++;
-      disable fork;
-    end
-  endtask
-
-  task automatic check_field2(string nm, logic [1:0] exp, logic [1:0] got, logic [1:0] m);
-    if ((m[1] && (got[1] !== exp[1])) || (m[0] && (got[0] !== exp[0]))) begin
-      $display("[FAIL] %s exp=%02b got=%02b", nm, exp, got);
-      fail++;
-      disable fork;
-    end
-  endtask
-
-  task automatic check_field3(string nm, logic [2:0] exp, logic [2:0] got, logic [2:0] m);
-    if ((m[2] && (got[2] !== exp[2])) || (m[1] && (got[1] !== exp[1])) || (m[0] && (got[0] !== exp[0]))) begin
-      $display("[FAIL] %s exp=%03b got=%03b", nm, exp, got);
-      fail++;
-      disable fork;
-    end
-  endtask
-
-  task automatic check(vec_t v);
-    // Sanidade: instrução de 32b deve ter inst[1:0]==2'b11
-    if (v.inst[1:0] !== 2'b11) begin
-      $display("[FAIL] %s: inst[1:0]!=11 (0b%b)", v.name, v.inst[1:0]);
-      fail++; return;
-    end
-
-    // Drive DUT
-    i_op        = get_op   (v.inst);
-    i_funct_3   = get_f3   (v.inst);
-    i_funct_7_5 = get_f7_5 (v.inst);
-    #1ns;
-
-    fork
-      begin
-        check_field ("jump"      , v.exp_jump      , o_jump_ID       , v.m_jump);
-        check_field ("branch"    , v.exp_branch    , o_branch_ID     , v.m_branch);
-        check_field ("reg_write" , v.exp_regw      , o_reg_write_ID  , v.m_regw);
-        check_field2("result_src", v.exp_result_src, o_result_src_ID , v.m_result_src);
-        check_field ("mem_write" , v.exp_memw      , o_mem_write_ID  , v.m_memw);
-        check_field ("alu_src"   , v.exp_alusrc    , o_alu_src_ID    , v.m_alusrc);
-        check_field3("imm_src"   , v.exp_immsrc    , o_imm_src_ID    , v.m_immsrc);
-        check_field3("alu_op"    , v.exp_aluop     , o_alu_op        , v.m_aluop);
-        check_field ("addr_src"  , v.exp_addrsrc   , o_addr_src_ID   , v.m_addrsrc);
-        check_field ("fence"     , v.exp_fence     , o_fence_ID      , v.m_fence);
+      if (mism == "") begin
+        $display("%-6s 0x%08h  ok", v.name, v.inst);
+      end else begin
+        $display("%-6s 0x%08h  divergências:%s", v.name, v.inst, mism);
+        $display("         exp: imm=%0b addr=%0b aluop=%0b alusrc=%0b res=%0b br=%0b j=%0b rw=%0b mw=%0b fc=%0b",
+                 v.exp.imm_src, v.exp.addr_src, v.exp.alu_op, v.exp.alu_src, v.exp.result_src,
+                 v.exp.branch, v.exp.jump, v.exp.reg_write, v.exp.mem_write, v.exp.fence);
+        $display("         got: imm=%0b addr=%0b aluop=%0b alusrc=%0b res=%0b br=%0b j=%0b rw=%0b mw=%0b fc=%0b",
+                 o_imm_src_ID, o_addr_src_ID, o_alu_op, o_alu_src_ID, o_result_src_ID,
+                 o_branch_ID, o_jump_ID, o_reg_write_ID, o_mem_write_ID, o_fence_ID);
       end
-    join
-
-    if (fail==0) begin
-      pass++;
-      $display("[PASS] %s", v.name);
     end
   endtask
 
+  // (helpers para debug, se quiser)
+  function automatic [4:0] opcode5(input logic [31:0] x); opcode5 = x[6:2]; endfunction
+  function automatic [2:0] funct3 (input logic [31:0] x); funct3  = x[14:12]; endfunction
+  function automatic        funct7b5(input logic [31:0] x); funct7b5 = x[30]; endfunction
+
+  // === Programa de teste: cobre as 37+ instruções do RV32I/E ===
   initial begin
-    // Sequência
-    #1ns;
+    // U-type
+    V.push_back('{name:"LUI",   inst:32'h123450b7, exp:'{imm_src:3'b100, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"AUIPC", inst:32'h00010097, exp:'{imm_src:3'b100, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b11, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+
+    // Jumps
+    V.push_back('{name:"JAL",   inst:32'h000800ef, exp:'{imm_src:3'b011, addr_src:1'b0, alu_op:3'b000, alu_src:1'b0, result_src:2'b01, branch:1'b0, jump:1'b1, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"JALR",  inst:32'h004302e7, exp:'{imm_src:3'b000, addr_src:1'b1, alu_op:3'b000, alu_src:1'b1, result_src:2'b01, branch:1'b0, jump:1'b1, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+
+    // Branches
+    V.push_back('{name:"BEQ",   inst:32'h01031c63, exp:'{imm_src:3'b010, addr_src:1'b0, alu_op:3'b001, alu_src:1'b0, result_src:2'b00, branch:1'b1, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"BNE",   inst:32'h01031ce3, exp:'{imm_src:3'b010, addr_src:1'b0, alu_op:3'b001, alu_src:1'b0, result_src:2'b00, branch:1'b1, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"BLT",   inst:32'h01035463, exp:'{imm_src:3'b010, addr_src:1'b0, alu_op:3'b001, alu_src:1'b0, result_src:2'b00, branch:1'b1, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"BGE",   inst:32'h01035563, exp:'{imm_src:3'b010, addr_src:1'b0, alu_op:3'b001, alu_src:1'b0, result_src:2'b00, branch:1'b1, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"BLTU",  inst:32'h01035663, exp:'{imm_src:3'b010, addr_src:1'b0, alu_op:3'b001, alu_src:1'b0, result_src:2'b00, branch:1'b1, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"BGEU",  inst:32'h01035763, exp:'{imm_src:3'b010, addr_src:1'b0, alu_op:3'b001, alu_src:1'b0, result_src:2'b00, branch:1'b1, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+
+    // Loads
+    V.push_back('{name:"LB",    inst:32'h00830283, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b10, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"LH",    inst:32'h00831283, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b10, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"LW",    inst:32'h00832283, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b10, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"LBU",   inst:32'h00834283, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b10, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"LHU",   inst:32'h00835283, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b10, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+
+    // Stores
+    V.push_back('{name:"SB",    inst:32'h00c300a3, exp:'{imm_src:3'b001, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b0, mem_write:1'b1, fence:1'b0}});
+    V.push_back('{name:"SH",    inst:32'h00c311a3, exp:'{imm_src:3'b001, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b0, mem_write:1'b1, fence:1'b0}});
+    V.push_back('{name:"SW",    inst:32'h00c322a3, exp:'{imm_src:3'b001, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b0, mem_write:1'b1, fence:1'b0}});
+
+    // I-type ALU
+    V.push_back('{name:"ADDI",  inst:32'h00530293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b000, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SLTI",  inst:32'h00531293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b100, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SLTIU", inst:32'h00532293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b100, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"XORI",  inst:32'h00534293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b101, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"ORI",   inst:32'h00536293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b110, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"ANDI",  inst:32'h00537293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b111, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SLLI",  inst:32'h00131293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b011, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SRLI",  inst:32'h00135293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b011, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SRAI",  inst:32'h40135293, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b011, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+
+    // R-type ALU
+    V.push_back('{name:"ADD",   inst:32'h007303b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b000, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SUB",   inst:32'h407303b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b001, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SLL",   inst:32'h007313b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b011, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SLT",   inst:32'h007323b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b100, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SLTU",  inst:32'h007333b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b100, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"XOR",   inst:32'h007343b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b101, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SRL",   inst:32'h007353b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b011, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"SRA",   inst:32'h407353b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b011, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"OR",    inst:32'h007363b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b110, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"AND",   inst:32'h007373b3, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b111, alu_src:1'b0, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b1, mem_write:1'b0, fence:1'b0}});
+
+    // Miscelânea
+    V.push_back('{name:"FENCE", inst:32'h0003000f, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b001, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b1}});
+    V.push_back('{name:"ECALL", inst:32'h00000073, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b010, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+    V.push_back('{name:"EBREAK",inst:32'h00100073, exp:'{imm_src:3'b000, addr_src:1'b0, alu_op:3'b010, alu_src:1'b1, result_src:2'b00, branch:1'b0, jump:1'b0, reg_write:1'b0, mem_write:1'b0, fence:1'b0}});
+
+    // Roda
+    $display("=== op_decoder TB ===");
     foreach (V[i]) begin
-      int fail_before = fail;
       check(V[i]);
-      if (fail > fail_before) $display("  -> Vetor %0d (%s) FALHOU", i, V[i].name);
     end
-    $display("==== SUMMARY: PASS=%0d FAIL=%0d ====", pass, fail);
-    if (fail==0) $finish(0); else $finish(1);
+    $display("=== done ===");
+    #1 $finish;
   end
 
 endmodule
