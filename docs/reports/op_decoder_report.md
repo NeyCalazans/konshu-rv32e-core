@@ -1,32 +1,50 @@
-# Relatório de Validação do `op_decoder`
+# `op_decoder` Validation Report
 
-## 📅 Data
-28/09/2025
+## 📅 Date
+September 28, 2025
 
-## 🔎 Contexto
-Validação do módulo `op_decoder` do core Konshu RV32E através do testbench `op_decoder_tb.sv`.  
-Foram rodados testes cobrindo as 37 instruções da ISA base implementadas.
+---
 
-## ✅ Resultados
+## 🔎 Context
 
-- **Instruções validadas sem divergências:**  
-  - LUI
+This report summarizes the validation of the **`op_decoder`** module of the **Konshu RV32E** core, executed through the **`op_decoder_tb.sv`** testbench.  
+The testbench covered all **37 base instructions** implemented in the RV32E subset.
 
-- **Divergências identificadas (reais bugs no RTL):**  
-  - ECALL/EBREAK → `reg_write` deveria ser 0, mas está em 1.  
-  - `result_src` indefinido (X) em instruções sem write-back (esperado: fixo ou don’t-care).
+---
 
-- **Divergências por diferença de codificação (`alu_op`):**  
-  - ADD/SUB e demais aritméticas → DUT devolve `alu_op=100` (modo genérico),  
-    enquanto a TB esperava códigos distintos.  
-  - Branches → `alu_op=11` no DUT vs. `alu_op=1` esperado na TB.  
-  → Consideramos divergências de **semântica**, não bugs.
+## ✅ Results Summary
 
-- **Divergências por don’t-care não tratado:**  
-  - `result_src=xx` quando `reg_write=0` (branches, stores, fence).
+### ✔️ Instructions validated with no divergences
+- **LUI**
 
-## 📝 Próximos passos
-1. Atualizar TB para ignorar `alu_op` (CHECK_ALU_OP=0) e `result_src` quando `reg_write=0`.  
-2. Rodar novamente para focar só nos erros “quentes”.  
-3. Preparar e enviar resumo para Rafael confirmando os casos de bug.  
-4. Depois alinhar enums do `alu_op` entre RTL e TB (package compartilhado).
+### ⚠️ Identified divergences (confirmed RTL bugs)
+- **ECALL / EBREAK** → `reg_write` should be `0`, but is currently `1`.  
+- **`result_src` undefined (X)** for instructions with no write-back (expected: fixed or don't-care).
+
+### 🔸 Divergences due to encoding mismatches (`alu_op`)
+- **Arithmetic operations (ADD/SUB, etc.):**  
+  DUT returns `alu_op = 100` (generic mode), while the TB expected distinct codes.  
+- **Branches:**  
+  DUT returns `alu_op = 11` vs. TB expected `alu_op = 1`.  
+  → These are considered **semantic differences**, not functional bugs.
+
+### 🔹 Divergences from unhandled don’t-care conditions
+- `result_src = XX` when `reg_write = 0` (affects branch, store, and fence instructions).
+
+---
+
+## 🧭 Next Steps
+
+1. Update the testbench to ignore `alu_op` (`CHECK_ALU_OP = 0`) and `result_src` when `reg_write = 0`.  
+2. Re-run simulations focusing only on **critical (functional)** mismatches.  
+3. Prepare and send a summary report to **Rafael Oliveira** confirming verified bug cases.  
+4. Align the **`alu_op` enum definitions** between the RTL and the testbench (using a shared package).
+
+---
+
+## 🧩 Notes
+
+These results confirm partial compliance of the Konshu RV32E `op_decoder` with the expected RISC-V Base ISA semantics.  
+Remaining differences are related to signal encoding conventions and will be resolved in future iterations.
+
+_Last updated: October 2025_
