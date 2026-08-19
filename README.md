@@ -1,15 +1,15 @@
-# Konshu RV32E Core Verification
+# Konshu RV32E Core Implementation
 
-This repository contains **testbenches** and **automation scripts** used to verify the **RV32E core** developed under the **Konshu Project** at UFSC.
+This repository contains or will contain HDL descriptions, testbenches and scripts used to design, verify and implmenty the **RV32E core** originally developed under the **Konshu Project** at UFSC.
 
 ---
 
 ## 🧠 Purpose
 
-The main objective of this environment is to validate the **`op_decoder`** module against the expected behavior defined by the **RISC-V RV32E Base ISA**.
-The verification process ensures that all **control signals** are correctly generated for each instruction, following the canonical truth table defined in the validation matrix.
+The main objective of this project is design a RISC-V RV32E module and certify its behavior as defined by the **RISC-V RV32E Base ISA**.
 
 ---
+In the past, this repository aimed the verificaton of a first version of the Konshu RV32E core, see below some verification actions already taken and its results.
 
 ## ▶️ Running the `op_decoder` Testbench
 
@@ -57,6 +57,7 @@ The `docs/` folder includes:
 * **Mateus Mendes Sodré**
 * **Rodrigo Vinícius Mendonça Pereira**
 * **Ney Laert Vilar Calazans**
+* **Eduardo Zambotto da Silva**
 
 ---
 
