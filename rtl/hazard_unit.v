@@ -61,7 +61,7 @@ module hazard_unit #(
     input wire [REG_WIDTH-1:0] i_rs2Addr_EX;
 
     // Execute Stage ->
-    input wire i_pcSrc_EX;
+    input wire [1:0] i_pcSrc_EX;
 
     // Execute Stage ->
     input wire [1:0] i_result_src_EX;

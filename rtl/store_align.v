@@ -51,7 +51,7 @@ module store_align (
                             o_write_data_aligned = {16'b0, i_write_data_M[15:0]};
                         end
                         2'b10: begin
-                            o_we_mask            = 4 meb1100;
+                            o_we_mask            = 4'b1100;
                             o_write_data_aligned = {i_write_data_M[15:0], 16'b0};
                         end
                         default: begin 
@@ -60,7 +60,7 @@ module store_align (
                         end
                     endcase
                 end
-                
+
                 // sw
                 3'b010: begin
                     if (i_addr_low == 2'b00) begin
