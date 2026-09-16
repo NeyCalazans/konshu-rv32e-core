@@ -25,6 +25,7 @@ module stage_fetch #(
 ) (
     clk,
     i_pc_target_EX,
+    i_alu_result_EX,
     i_pc_src_EX,
     i_rst_IF,
     i_en_IF,
@@ -34,14 +35,16 @@ module stage_fetch #(
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
-    input logic clk;
-    input logic [DATA_WIDTH-1:0] i_pc_target_EX;
-    input logic i_pc_src_EX;
-    input logic i_rst_IF;
-    input logic i_en_IF;
 
-    output  reg [DATA_WIDTH-1:0] o_pc_IF;
-    output  reg [DATA_WIDTH-1:0] o_pcplus4_IF;
+    input wire                  clk;
+    input wire [DATA_WIDTH-1:0] i_pc_target_EX;
+    input wire [DATA_WIDTH-1:0] i_alu_result_EX;
+    input wire [1:0]            i_pc_src_EX;
+    input wire                  i_rst_IF;
+    input wire                  i_en_IF;
+
+    output wire [DATA_WIDTH-1:0] o_pc_IF;
+    output wire [DATA_WIDTH-1:0] o_pcplus4_IF;
 
 
     // ------------------------------------------
@@ -56,13 +59,14 @@ module stage_fetch #(
     // Logic
     // ------------------------------------------
     next_pc U_NEXT_PC (
-        .clk           (clk),
-        .i_pc_target_EX(i_pc_target_EX),
-        .i_pc_src_EX   (i_pc_src_EX),
-        .i_rst_IF      (i_rst_IF),
-        .i_en_IF       (i_en_IF),
-        .o_pcplus4_IF  (o_pcplus4_IF),
-        .o_pc_IF       (o_pc_IF)
+        .clk             (clk),
+        .i_pc_target_EX  (i_pc_target_EX),
+        .i_pc_src_EX     (i_pc_src_EX),
+        .i_alu_result_EX (i_alu_result_EX),
+        .i_rst_IF        (i_rst_IF),
+        .i_en_IF         (i_en_IF),
+        .o_pcplus4_IF    (o_pcplus4_IF),
+        .o_pc_IF         (o_pc_IF)
     );
 
 endmodule

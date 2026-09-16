@@ -26,21 +26,19 @@ module pc_target #(
     o_pc_target_EX
 );
 
-// ------------------------------------------
-// IO declaration
-// ------------------------------------------
-    input   logic   [WIDTH-1:0]   i_pc_EX;
-    input   logic   [WIDTH-1:0]   i_imm_ext_EX;
+    // ------------------------------------------
+    // IO declaration
+    // ------------------------------------------
 
-    output  logic   [WIDTH-1:0]  o_pc_target_EX;
-                            
-// ------------------------------------------
-// Signals deinitions
-// ------------------------------------------
+    input wire [WIDTH-1:0] i_pc_EX;
+    input wire [WIDTH-1:0] i_imm_ext_EX;
 
-// ------------------------------------------
-// Logic
-// ------------------------------------------
+    output wire [WIDTH-1:0] o_pc_target_EX;           
+
+    // ------------------------------------------
+    // Logic
+    // ------------------------------------------
+
     assign o_pc_target_EX = i_pc_EX + i_imm_ext_EX;
 
 endmodule

@@ -27,6 +27,7 @@ module control_unit (
     i_branch_EX,
     i_jump_EX,
     i_zero,
+    i_addr_src_EX,
     o_pc_src_EX,
     o_jump_ID,
     o_branch_ID,
@@ -36,34 +37,37 @@ module control_unit (
     o_alu_src_ID,
     o_imm_src_ID,
     o_alu_ctrl_ID,
-    o_addr_src_ID,
-    o_fence_ID
+    o_addr_src_ID
 );
 
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
-    input logic [4:0] i_op;
-    input logic [2:0] i_funct_3;
-    input logic i_funct_7_5;
-    input logic i_zero, i_branch_EX, i_jump_EX;
 
-    output logic o_pc_src_EX;
-    output logic o_jump_ID;
-    output logic o_branch_ID;
-    output logic o_reg_write_ID;
-    output logic [1:0] o_result_src_ID;
-    output logic o_mem_write_ID;
-    output logic [4:0] o_alu_ctrl_ID;
-    output logic o_alu_src_ID;
-    output logic o_addr_src_ID;
-    output logic [2:0] o_imm_src_ID;
-    output logic o_fence_ID;
+    input wire [4:0] i_op;
+    input wire [2:0] i_funct_3;
+    input wire       i_funct_7_5;
+    input wire       i_zero;
+    input wire       i_addr_src_EX;
+    input wire       i_branch_EX;
+    input wire       i_jump_EX;
+
+    output wire [1:0] o_pc_src_EX;
+    output wire       o_jump_ID;
+    output wire       o_branch_ID;
+    output wire       o_reg_write_ID;
+    output wire [1:0] o_result_src_ID;
+    output wire       o_mem_write_ID;
+    output wire [4:0] o_alu_ctrl_ID;
+    output wire       o_alu_src_ID;
+    output wire       o_addr_src_ID;
+    output wire [2:0] o_imm_src_ID;
 
     // ------------------------------------------
     // Signals
     // ------------------------------------------
-    logic [2:0] alu_op;
+    
+    wire [2:0] alu_op;
 
     // ------------------------------------------
     // Instantiating op_decoder module
@@ -81,8 +85,7 @@ module control_unit (
         .o_alu_src_ID(o_alu_src_ID),
         .o_imm_src_ID(o_imm_src_ID),
         .o_alu_op(alu_op),
-        .o_addr_src_ID(o_addr_src_ID),
-        .o_fence_ID(o_fence_ID)
+        .o_addr_src_ID(o_addr_src_ID)
     );
 
     // ------------------------------------------
@@ -96,6 +99,6 @@ module control_unit (
         .o_alu_ctrl_ID(o_alu_ctrl_ID)
     );
 
-    assign o_pc_src_EX = ((i_zero && i_branch_EX) || i_jump_EX) ? 1'b1 : 1'b0;
+    assign o_pc_src_EX = {i_addr_src_EX, ((i_zero && i_branch_EX) || i_jump_EX)};
 
 endmodule
