@@ -36,21 +36,30 @@ module register_file #(
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
-    input logic clk;
-    input logic i_rst_ID;
-    input logic i_write_en_WB;  // determine write operation is enabled
-    input logic [DATA_WIDTH-1:0] i_data_WB;  // data to be written
-    input logic [INDEX_WIDTH-1:0] i_rd_WB;  // determine the register to be written
-    input logic [DATA_WIDTH-1:0] i_instr_ID;  // determine the registers to be read
+    
+    input wire                   clk;
+    input wire                   i_rst_ID;
+    input wire                   i_write_en_WB;  // determine write operation is enabled
+    input wire [DATA_WIDTH-1:0]  i_data_WB;  // data to be written
+    input wire [INDEX_WIDTH-1:0] i_rd_WB;  // determine the register to be written
+    input wire [DATA_WIDTH-1:0]  i_instr_ID;  // determine the registers to be read
 
-    output logic [DATA_WIDTH-1:0] o_rs1_ID;
-    output logic [DATA_WIDTH-1:0] o_rs2_ID;
+    output reg [DATA_WIDTH-1:0] o_rs1_ID;
+    output reg [DATA_WIDTH-1:0] o_rs2_ID;
+
+    /*output wire [DATA_WIDTH-1:0] o_rs1_ID;
+    output wire [DATA_WIDTH-1:0] o_rs2_ID;*/
 
     // ------------------------------------------
-    // Localparams
+    // Sign declaration
     // ------------------------------------------
 
     reg [DATA_WIDTH-1:0] registers[15:0];
+    integer i;
+
+    // ------------------------------------------
+    // Logic
+    // ------------------------------------------
 
     // assign registers[0] = 32'b0;  // * search for static registers -> save energy
 
@@ -58,7 +67,7 @@ module register_file #(
     always @(posedge clk) begin
         // ! ? synchronous reset ??
         if (i_rst_ID) begin
-            for (integer i = 0; i < NUM_REGS; i = i + 1) begin
+            for (i = 0; i < NUM_REGS; i = i + 1) begin
                 // registers[i] <= {DATA_WIDTH{1'b0}};
                 // if (i == 1) begin
                 //     registers[i] <= {DATA_WIDTH{1'b0}} + i;
@@ -68,7 +77,8 @@ module register_file #(
                 registers[i] <= {DATA_WIDTH{1'b0}} + i;
                 // registers[i] <= 32'b0 - i;
             end
-        end else begin
+        end 
+        else begin
             if (i_write_en_WB & (i_rd_WB != 4'b0)) begin
                 registers[i_rd_WB] <= i_data_WB;
             end
@@ -77,8 +87,17 @@ module register_file #(
 
     // reading takes place in the second half of the clock cycle (second semicircle)
     always @(negedge clk) begin
-        o_rs1_ID <= registers[i_instr_ID[18:15]];
-        o_rs2_ID <= registers[i_instr_ID[23:20]];
+        o_rs1_ID <= (i_instr_ID[18:15] == 5'b0) ? {DATA_WIDTH{1'b0}} :
+                      (i_write_en_WB && (i_instr_ID[18:15] == i_rd_WB)) ? i_data_WB : registers[i_instr_ID[18:15]];
+    
+        o_rs2_ID <= (i_instr_ID[23:20] == 5'b0) ? {DATA_WIDTH{1'b0}} :
+                      (i_write_en_WB && (i_instr_ID[23:20] == i_rd_WB)) ? i_data_WB : registers[i_instr_ID[23:20]];
+
     end
+
+    /*assign o_rs1_ID = (i_instr_ID[18:15] == 5'b0) ? {DATA_WIDTH{1'b0}} :
+                      (i_write_en_WB && (i_instr_ID[18:15] == i_rd_WB)) ? i_data_WB : registers[i_instr_ID[18:15]];
+    assign o_rs2_ID = (i_instr_ID[23:20] == 5'b0) ? {DATA_WIDTH{1'b0}} :
+                      (i_write_en_WB && (i_instr_ID[23:20] == i_rd_WB)) ? i_data_WB : registers[i_instr_ID[23:20]];*/
 
 endmodule
