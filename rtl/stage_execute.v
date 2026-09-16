@@ -41,35 +41,34 @@ module stage_execute #(
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
-    input i_alu_src_EX;
-    input [DATA_WIDTH-1:0] i_rd1_EX;
-    input [DATA_WIDTH-1:0] i_rd2_EX;
-    input [DATA_WIDTH-1:0] i_pc_EX;
-    input [DATA_WIDTH-1:0] i_imm_ext_EX;
-    input [DATA_WIDTH-1:0] i_result_WB;
-    input [DATA_WIDTH-1:0] i_alu_result_M;
-    input [1:0] i_forward_rs1_EX;
-    input [1:0] i_forward_rs2_EX;
-    input [4:0] i_alu_ctrl_EX;
 
-    output o_equal_EX;
-    output [DATA_WIDTH-1:0] o_alu_result_EX;
-    output [DATA_WIDTH-1:0] o_write_data_EX;
-    output [DATA_WIDTH-1:0] o_pc_target_EX;
+    input wire                  i_alu_src_EX;
+    input wire [DATA_WIDTH-1:0] i_rd1_EX;
+    input wire [DATA_WIDTH-1:0] i_rd2_EX;
+    input wire [DATA_WIDTH-1:0] i_pc_EX;
+    input wire [DATA_WIDTH-1:0] i_imm_ext_EX;
+    input wire [DATA_WIDTH-1:0] i_result_WB;
+    input wire [DATA_WIDTH-1:0] i_alu_result_M;
+    input wire [1:0]            i_forward_rs1_EX;
+    input wire [1:0]            i_forward_rs2_EX;
+    input wire [4:0]            i_alu_ctrl_EX;
 
-    // ------------------------------------------
-    // Localparams
-    // ------------------------------------------
+    output wire                  o_equal_EX;
+    output wire [DATA_WIDTH-1:0] o_alu_result_EX;
+    output wire [DATA_WIDTH-1:0] o_write_data_EX;
+    output wire [DATA_WIDTH-1:0] o_pc_target_EX;
 
     // ------------------------------------------
     // Signals deinitions
     // ------------------------------------------
+
     wire [DATA_WIDTH-1:0] srcA_EX;
     wire [DATA_WIDTH-1:0] srcB_EX;
 
     // ------------------------------------------
     // Logic
     // ------------------------------------------
+
     pc_target U_PC_TARGET (
         .i_pc_EX(i_pc_EX),
         .i_imm_ext_EX(i_imm_ext_EX),

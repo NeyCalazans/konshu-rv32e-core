@@ -20,14 +20,32 @@
 module adder #(
     parameter WIDTH = 32
 ) (
-    input wire cin,
-    input wire [WIDTH-1:0] a,
+    cin,
+    a,
     b,
-    output wire [WIDTH-1:0] sum
-    // output wire cout,
+    sum
 );
+
+    // ------------------------------------------
+    // IO declaration
+    // ------------------------------------------
+
+    input wire           cin;
+    input wire [WIDTH-1:0] a;
+    input wire [WIDTH-1:0] b;
+
+    output wire [WIDTH-1:0] sum;
+
+    // ------------------------------------------
+    // Signals deinitions
+    // ------------------------------------------
+
     wire [WIDTH-1:0] internal_sum;
     wire [WIDTH-1:0] carry;
+
+    // ------------------------------------------
+    // Logic
+    // ------------------------------------------
 
     genvar i;
     assign sum = internal_sum;
@@ -43,16 +61,10 @@ module adder #(
                     .cout(carry[i])
                 );
             end  // last bit
-                else if (i == WIDTH - 1) begin  // Last FA
-                // full_adder FA_final (
-                //     .a(a[i]),
-                //     .b(b[i]),
-                //     .cin(sum[i]),
-                //     .sum(carry[i]),
-                //     .cout(cout)
-                // );
+            else if (i == WIDTH - 1) begin  // Last FA
                 assign internal_sum[i] = a[i] ^ b[i] ^ carry[i-1];
-            end else begin  // Middle FAs
+            end 
+            else begin  // Middle FAs
                 full_adder FAs_middle (
                     .a(a[i]),
                     .b(b[i]),

@@ -30,16 +30,17 @@ module mux_3x1 #(
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
-    input [1:0] i_sel;
-    input [DATA_WIDTH-1:0] i_a;
-    input [DATA_WIDTH-1:0] i_b;
-    input [DATA_WIDTH-1:0] i_c;
+    input wire [1:0]            i_sel;
+    input wire [DATA_WIDTH-1:0] i_a;
+    input wire [DATA_WIDTH-1:0] i_b;
+    input wire [DATA_WIDTH-1:0] i_c;
 
-    output  reg [31:0] o_mux;
+    output reg [31:0] o_mux;
 
     // ------------------------------------------
-    // Signals deinitions
-    // ------------------------------------------    
+    // Logic
+    // ------------------------------------------
+    
     always @(*) begin
         case (i_sel)
             2'b00:   o_mux = i_a;

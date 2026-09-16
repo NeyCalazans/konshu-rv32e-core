@@ -44,35 +44,36 @@ module stage_decode (
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
-    input wire clk;  // Clock input
-    input wire i_rst_ID;  // Reset input for regiser file
-    input wire [3:0] i_rd_WB;  // register to perform the write
+
+    input wire        clk;  // Clock input
+    input wire        i_rst_ID;  // Reset input for regiser file
+    input wire [3:0]  i_rd_WB;  // register to perform the write
     input wire [31:0] i_instr_ID;  // Instruction ID input
     input wire [31:0] i_data_WB;  // data to write in a register
-    input wire i_write_en_WB;  // ennable write operation in register file
-    input wire [2:0] i_imm_src_ID;  // 3 bits for choose which immediate extension
+    input wire        i_write_en_WB;  // ennable write operation in register file
+    input wire [2:0]  i_imm_src_ID;  // 3 bits for choose which immediate extension
 
-    output wire o_funct_7_5;  // Bit 5 for func7 field   
-    output wire [4:0] o_op;  // Opcode
-    output wire [2:0] o_funct3;  // Field func3
-    output wire [3:0] o_rd_ID;  //
-    output wire [3:0] o_rs1Addr_ID;  // goes to Hazard unit
-    output wire [3:0] o_rs2Addr_ID;  // goes to Hazard unit
+    output wire        o_funct_7_5;  // Bit 5 for func7 field   
+    output wire [4:0]  o_op;  // Opcode
+    output wire [2:0]  o_funct3;  // Field func3
+    output wire [3:0]  o_rd_ID;  //
+    output wire [3:0]  o_rs1Addr_ID;  // goes to Hazard unit
+    output wire [3:0]  o_rs2Addr_ID;  // goes to Hazard unit
     output wire [31:0] o_rs1_ID;  // rs1 register content
     output wire [31:0] o_rs2_ID;  // rs2 register content
     output wire [31:0] o_imm_ex_ID;  // Immediate with sign extended                                
 
     // ------------------------------------------
-    // Localparams
-    // ------------------------------------------
-
-    // ------------------------------------------
-    // Signals deinitions
-    // ------------------------------------------
-
-    // ------------------------------------------
     // Logic
     // ------------------------------------------
+
+    assign o_op         = i_instr_ID[6:2];    // Only 5 bits used, last 2 are constant
+    assign o_funct3     = i_instr_ID[14:12];
+    assign o_funct_7_5  = i_instr_ID[30];
+    assign o_rd_ID      = i_instr_ID[10:7];   // Only 4 bits because there is only 16 registers
+    assign o_rs1Addr_ID = i_instr_ID[18:15];  
+    assign o_rs2Addr_ID = i_instr_ID[23:20];
+
     extend_unit U_EXTEND_UNIT (
         .i_imm_ID(i_instr_ID[31:7]),
         .i_imm_src_ID(i_imm_src_ID),
@@ -93,14 +94,5 @@ module stage_decode (
         .o_rs1_ID(o_rs1_ID),
         .o_rs2_ID(o_rs2_ID)
     );
-
-    assign o_op = i_instr_ID[6:2];
-    assign o_funct3 = i_instr_ID[14:12];
-    assign o_funct_7_5 = i_instr_ID[30];
-    assign o_rd_ID = i_instr_ID[10:7];
-
-    assign o_rs1Addr_ID = i_instr_ID[18:15];
-    assign o_rs2Addr_ID = i_instr_ID[23:20];
-
 
 endmodule
