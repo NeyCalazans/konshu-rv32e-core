@@ -25,34 +25,46 @@ module stage_write_back #(
     i_result_data_WB,
     i_pcplus4_WB,
     i_pc_target_WB,
+    i_funct_3,
     o_result_WB
 );
 
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
-    input logic [1:0] i_result_src_WB;
-    input logic [DATA_WIDTH-1:0] i_alu_result_WB;
-    input logic [DATA_WIDTH-1:0] i_result_data_WB;
-    input logic [DATA_WIDTH-1:0] i_pcplus4_WB;
-    input logic [DATA_WIDTH-1:0] i_pc_target_WB;
+    
+    input wire [1:0]            i_result_src_WB;
+    input wire [DATA_WIDTH-1:0] i_alu_result_WB;
+    input wire [DATA_WIDTH-1:0] i_result_data_WB;
+    input wire [DATA_WIDTH-1:0] i_pcplus4_WB;
+    input wire [DATA_WIDTH-1:0] i_pc_target_WB;
+    input wire [2:0]            i_funct_3;
 
-    output logic [31:0] o_result_WB;
-
-
-    // ------------------------------------------
-    // Localparams
-    // ------------------------------------------
+    output reg [31:0] o_result_WB;
 
     // ------------------------------------------
-    // Signals definitions
+    // Sign declaration
     // ------------------------------------------
 
+    wire [DATA_WIDTH-1:0] result_data_WB;
+    wire [1:0]            addr_low_WB;
 
     // ------------------------------------------
     // Logic
     // ------------------------------------------
-    always @(i_result_src_WB or i_alu_result_WB or i_result_data_WB or i_pcplus4_WB) begin
+
+    assign addr_low_WB = i_alu_result_WB[1:0];
+
+    load_extend #(
+        .DATA_WIDTH(DATA_WIDTH)
+    ) U_LOAD_EXTEND (
+        .i_funct_3(i_funct_3),
+        .i_addr_low(addr_low_WB),
+        .i_read_data_M(i_result_data_WB),
+        .o_result_data_WB(result_data_WB)
+    );
+
+    always @(*) begin
         case (i_result_src_WB)
             2'b00: begin
                 o_result_WB = i_alu_result_WB;  //
@@ -61,11 +73,15 @@ module stage_write_back #(
                 o_result_WB = i_pcplus4_WB;  //
             end
             2'b10: begin
-                o_result_WB = i_result_data_WB;  // comes from Data Memory
+                o_result_WB = result_data_WB;  // comes from Data Memory
             end
             2'b11: begin
                 o_result_WB = i_pc_target_WB;  // PC + imm (comes from stage_execute.next_pc)
             end
         endcase
     end
+
+
+
+
 endmodule
