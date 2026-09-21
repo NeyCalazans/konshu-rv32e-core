@@ -1,15 +1,15 @@
-# Konshu RV32E Core Implementation
+# Konshu RV32E Core Implementation (UFSC-V)
 
-This repository contains or will contain HDL descriptions, testbenches and scripts used to design, verify and implmenty the **RV32E core** originally developed under the **Konshu Project** at UFSC.
+This repository contains HDL descriptions, testbenches and scripts used to design, verify and implement the **RV32E core** originally developed under the **Konshu Project** at UFSC.
 
 ---
 
 ## 🧠 Purpose
 
-The main objective of this project is design a RISC-V RV32E module and certify its behavior as defined by the **RISC-V RV32E Base ISA**.
+The main objective of this project is to design a RISC-V RV32E module and certify its behavior as defined by the **RISC-V RV32E Base ISA**.
 
 ---
-In the past, this repository aimed the verificaton of a first version of the Konshu RV32E core, see below some verification actions already taken and its results.
+In the past, the original repository from where the current project was branch'ed aimed at the verificaton of a first version of the Konshu RV32E core, see below some verification actions already taken and their results.
 
 ## ▶️ Running the `op_decoder` Testbench
 
@@ -46,8 +46,8 @@ In the past, this repository aimed the verificaton of a first version of the Kon
 The `docs/` folder includes:
 
 * `DECODER_ISSUES.md` — List of inconsistencies found in the decoder.
-* `reports/op_decoder_report.md` — Validation report summarizing current results.
-* `validation/op_decoder_validation_matrix.md` — Canonical control signal matrix used as the reference truth table.
+* `reports/op_decoder_report.md` — Validation report summarizing results.
+* `validation/op_decoder_validation_matrix.md` — Canonical control signal matrix used as a reference table.
 * `TB_GUIDE.md` — Instructions for running and interpreting the testbench logs.
 
 ---
