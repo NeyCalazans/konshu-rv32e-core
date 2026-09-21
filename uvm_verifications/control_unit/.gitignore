@@ -1,0 +1,6 @@
+# Doxygen: track only the final PDF manual
+docs/*
+!docs/refman.pdf
+
+# Verilator build output
+sim/obj_dir/
