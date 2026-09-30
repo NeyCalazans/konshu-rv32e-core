@@ -30,7 +30,8 @@ module op_decoder (
     o_alu_src_ID,
     o_imm_src_ID,
     o_alu_op,
-    o_addr_src_ID
+    o_addr_src_ID,
+    o_auipc_ID
 );
 
     // ------------------------------------------
@@ -50,6 +51,7 @@ module op_decoder (
     output wire [2:0] o_imm_src_ID;
     output wire [2:0] o_alu_op;
     output wire       o_addr_src_ID;
+    output wire       o_auipc_ID;
 
     // ------------------------------------------
     // Localparams
@@ -121,6 +123,10 @@ module op_decoder (
          i_op == I_TYPE_LOAD  | 
          i_op == S_TYPE       | 
          i_op == I_TYPE_ARITH)
+        ? 1'b1 : 1'b0;
+
+    assign o_auipc_ID = 
+        (i_op == U_TYPE_AUIPC)
         ? 1'b1 : 1'b0;
 
     assign o_reg_write_ID = 

@@ -35,6 +35,7 @@ module control_unit (
     o_result_src_ID,
     o_mem_write_ID,
     o_alu_src_ID,
+    o_auipc_ID,
     o_imm_src_ID,
     o_alu_ctrl_ID,
     o_addr_src_ID
@@ -60,6 +61,7 @@ module control_unit (
     output wire       o_mem_write_ID;
     output wire [4:0] o_alu_ctrl_ID;
     output wire       o_alu_src_ID;
+    output wire       o_auipc_ID;
     output wire       o_addr_src_ID;
     output wire [2:0] o_imm_src_ID;
 
@@ -83,6 +85,7 @@ module control_unit (
         .o_result_src_ID(o_result_src_ID),
         .o_mem_write_ID(o_mem_write_ID),
         .o_alu_src_ID(o_alu_src_ID),
+        .o_auipc_ID(o_auipc_ID),
         .o_imm_src_ID(o_imm_src_ID),
         .o_alu_op(alu_op),
         .o_addr_src_ID(o_addr_src_ID)

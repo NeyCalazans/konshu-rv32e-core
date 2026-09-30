@@ -27,6 +27,7 @@ module stage_execute #(
     i_pc_EX,
     i_imm_ext_EX,
     i_alu_src_EX,
+    i_auipc_EX,
     i_result_WB,
     i_alu_result_M,
     i_forward_rs1_EX,
@@ -43,6 +44,7 @@ module stage_execute #(
     // ------------------------------------------
 
     input wire                  i_alu_src_EX;
+    input wire                  i_auipc_EX;
     input wire [DATA_WIDTH-1:0] i_rd1_EX;
     input wire [DATA_WIDTH-1:0] i_rd2_EX;
     input wire [DATA_WIDTH-1:0] i_pc_EX;
@@ -64,6 +66,7 @@ module stage_execute #(
 
     wire [DATA_WIDTH-1:0] srcA_EX;
     wire [DATA_WIDTH-1:0] srcB_EX;
+    wire [DATA_WIDTH-1:0] alu_raw_result;
 
     // ------------------------------------------
     // Logic
@@ -81,7 +84,7 @@ module stage_execute #(
         .i_alu_ctrl_EX(i_alu_ctrl_EX),
         .i_rd1_EX(srcA_EX),
         .i_rd2_EX(srcB_EX),
-        .o_alu_result_EX(o_alu_result_EX),
+        .o_alu_result_EX(alu_raw_result),
         .o_equal_EX(o_equal_EX)
     );
 
@@ -101,11 +104,18 @@ module stage_execute #(
         .o_mux(o_write_data_EX)
     );
 
-    mux_2x1 U_MUX_2X1 (
+    mux_2x1 U_MUX_2X1_1 (
         .i_sel(i_alu_src_EX),
         .i_a  (o_write_data_EX),
         .i_b  (i_imm_ext_EX),
         .o_mux(srcB_EX)
+    );
+
+    mux_2x1 U_MUX_2X1_2 (
+        .i_sel(i_auipc_EX),
+        .i_a  (alu_raw_result),
+        .i_b  (o_pc_target_EX),
+        .o_mux(o_alu_result_EX)
     );
 
 endmodule

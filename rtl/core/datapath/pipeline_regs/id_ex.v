@@ -39,6 +39,7 @@ module id_ex #(
     i_mem_write_ID,
     i_alu_ctrl_ID,
     i_alu_src_ID,
+    i_auipc_ID,
     i_funct_3_ID,
     i_clear,
     o_rd_EX,
@@ -57,6 +58,7 @@ module id_ex #(
     o_mem_write_EX,
     o_alu_ctrl_EX,
     o_alu_src_EX,
+    o_auipc_EX,
     o_funct_3_EX
 );
 
@@ -81,6 +83,7 @@ module id_ex #(
     input wire                  i_mem_write_ID;
     input wire [4:0]            i_alu_ctrl_ID;
     input wire                  i_alu_src_ID;
+    input wire                  i_auipc_ID;
     input wire [2:0]            i_funct_3_ID;
     input wire                  i_clear;  // Hazard
 
@@ -100,6 +103,7 @@ module id_ex #(
     output reg                  o_mem_write_EX;
     output reg [4:0]            o_alu_ctrl_EX;
     output reg                  o_alu_src_EX;
+    output reg                  o_auipc_EX;
     output reg [2:0]            o_funct_3_EX;
 
     // ------------------------------------------
@@ -124,6 +128,7 @@ module id_ex #(
             o_mem_write_EX  <= 1'b0;
             o_alu_ctrl_EX   <= 5'b0;
             o_alu_src_EX    <= 1'b0;
+            o_auipc_EX      <= 1'b0;
             o_funct_3_EX    <= 3'b0;
         end
         else begin
@@ -144,6 +149,7 @@ module id_ex #(
             o_mem_write_EX  <= i_mem_write_ID;
             o_alu_ctrl_EX   <= i_alu_ctrl_ID;
             o_alu_src_EX    <= i_alu_src_ID;
+            o_auipc_EX      <= i_auipc_ID;
             o_funct_3_EX    <= i_funct_3_ID;
         end
 

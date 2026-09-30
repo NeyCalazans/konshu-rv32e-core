@@ -40,6 +40,7 @@ module datapath #(
     i_mem_write_ID,
     i_alu_ctrl_ID,
     i_alu_src_ID,
+    i_auipc_ID,
     i_addr_src_ID,
     i_imm_src_ID,
     i_instr_IF,
@@ -49,10 +50,13 @@ module datapath #(
     o_branch_EX,
     o_addr_src_EX,
     o_zero,
-    o_mem_write_M,
-    o_write_data_M,
+    //o_we_mask,
+    o_write_data_aligned_M,
+    o_bw_M,
+    o_hw_M,
     o_data_addr_M,
-    o_funct_3_M,
+    o_mem_access_M,
+    o_mem_write_M,
     o_op,
     o_funct3,
     o_funct_7_5,
@@ -73,6 +77,7 @@ module datapath #(
     input wire                  i_mem_write_ID;
     input wire [4:0]            i_alu_ctrl_ID;
     input wire                  i_alu_src_ID;
+    input wire                  i_auipc_ID;
     input wire                  i_addr_src_ID;
     input wire [2:0]            i_imm_src_ID;
     input wire [DATA_WIDTH-1:0] i_instr_IF;
@@ -82,14 +87,17 @@ module datapath #(
     output wire                  o_branch_EX;
     output wire                  o_addr_src_EX;
     output wire                  o_zero;
-    output wire                  o_mem_write_M;
-    output wire [DATA_WIDTH-1:0] o_write_data_M;
+    //output wire [3:0]            o_we_mask;
+    output wire [DATA_WIDTH-1:0] o_write_data_aligned_M;
+    output wire                  o_bw_M;
+    output wire                  o_hw_M;
     output wire [DATA_WIDTH-1:0] o_data_addr_M;
-    output wire [2:0]            o_funct_3_M;
     output wire [4:0]            o_op;
     output wire [2:0]            o_funct3;
     output wire                  o_funct_7_5;
     output wire [DATA_WIDTH-1:0] o_pc_IF;
+    output wire                  o_mem_access_M;  // Equivalent to "ce" signal for the MIPS_S
+    output wire                  o_mem_write_M;   // Equivalent to "rw"/"we" signal for the MIPS_S
 
     // ------------------------------------------
     // Signals deinitions
@@ -132,6 +140,7 @@ module datapath #(
     wire                  reg_write_EX;
     wire                  mem_write_EX; 
     wire                  alu_src_EX;
+    wire                  auipc_EX;
     wire                  flush_EX;
     wire [1:0]            forward_rs1_EX;
     wire [1:0]            forward_rs2_EX;
@@ -236,6 +245,7 @@ module datapath #(
         .i_mem_write_ID(i_mem_write_ID),
         .i_alu_ctrl_ID(i_alu_ctrl_ID),
         .i_alu_src_ID(i_alu_src_ID),
+        .i_auipc_ID(i_auipc_ID),
         .i_funct_3_ID(o_funct3),
         .i_clear(flush_EX),
 
@@ -255,6 +265,7 @@ module datapath #(
         .o_mem_write_EX(mem_write_EX),
         .o_alu_ctrl_EX(alu_ctrl_EX),
         .o_alu_src_EX(alu_src_EX),
+        .o_auipc_EX(auipc_EX),
         .o_funct_3_EX(funct_3_EX)
     );
 
@@ -265,6 +276,7 @@ module datapath #(
         .i_pc_EX(pc_EX),
         .i_imm_ext_EX(imm_ext_EX),
         .i_alu_src_EX(alu_src_EX),
+        .i_auipc_EX(auipc_EX),
         .i_result_WB(result_WB),
         .i_alu_result_M(alu_result_M),
         .i_forward_rs1_EX(forward_rs1_EX),
@@ -301,24 +313,24 @@ module datapath #(
     );
 
     // Memory Access Stage
-    // assign o_data_addr_M  = alu_result_WB;
-    // assign o_write_data_M = write_data_M;
-    // assign o_mem_write_M  = mem_write_M;
+    // For now, write_data_aligned simply drives the same signal as write_data_M.
+    // This was due to modifying the core for the MIPS_S testbench
+    assign o_data_addr_M        = alu_result_M;
+    assign o_write_data_aligned_M = write_data_M;
 
-    // -------------------------------------
-    // Memory Access Stage
-    // assign o_data_addr_M  = alu_result_WB;
-    //// assign o_data_addr_M  = alu_result_M;
-    assign o_data_addr_M  = alu_result_M;
-
-    // assign o_write_data_M = write_data_M;
-    //// assign o_write_data_M = write_data_EX;
-    assign o_write_data_M = write_data_M;
-
+    assign o_mem_access_M = mem_write_M | (result_src_M == 2'b10);
     assign o_mem_write_M  = mem_write_M;
-    //assign o_mem_write_M  = mem_write_WB;
 
-    assign o_funct_3_M    = funct_3_M;
+    // Store align module for writing in memory with store type instructions
+    store_align U_STORE_ALIGN (
+        .i_mem_write_M       (mem_write_M),
+        .i_funct_3           (funct_3_M),
+        //.i_addr_low          (alu_result_M[1:0]),
+        //.i_write_data_M      (write_data_M),
+        .o_bw_M                (o_bw_M),
+        .o_hw_M                (o_hw_M)
+        //.o_write_data_aligned_M(o_write_data_aligned_M)
+    );
 
     // MEM/WB Pipeline Register
     mem_wb U_MEM_WB (

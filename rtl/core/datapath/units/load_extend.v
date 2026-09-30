@@ -25,7 +25,8 @@ module load_extend #(
     reg [7:0]  byte_sel;
     reg [15:0] half_sel;
 
-    always @(*) begin
+    // Commented to attend the UFSC_V testnech specification.
+    /*always @(*) begin
         case (i_addr_low)
             2'b00:   byte_sel = i_read_data_M[7:0];
             2'b01:   byte_sel = i_read_data_M[15:8];
@@ -46,6 +47,17 @@ module load_extend #(
             3'b010:  o_result_data_WB = i_read_data_M;                     // lw
             3'b100:  o_result_data_WB = {24'b0, byte_sel};                 // lbu
             3'b101:  o_result_data_WB = {16'b0, half_sel};                // lhu
+            default: o_result_data_WB = i_read_data_M;
+        endcase
+    end*/
+
+    always @(*) begin
+        case (i_funct_3)
+            3'b000:  o_result_data_WB = {{24{i_read_data_M[7]}}, i_read_data_M[7:0]};     // lb
+            3'b001:  o_result_data_WB = {{16{i_read_data_M[15]}}, i_read_data_M[15:0]};   // lh
+            3'b010:  o_result_data_WB = i_read_data_M;                                  // lw
+            3'b100:  o_result_data_WB = {24'b0, i_read_data_M[7:0]};                    // lbu
+            3'b101:  o_result_data_WB = {16'b0, i_read_data_M[15:0]};                   // lhu
             default: o_result_data_WB = i_read_data_M;
         endcase
     end
