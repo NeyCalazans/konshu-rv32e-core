@@ -32,4 +32,4 @@ Desktop.ini
 .idea/
 
 # Unfinished verifications
-uvm_verification/core/
+uvm_verifications/core/
