@@ -30,3 +30,6 @@ Desktop.ini
 # Outros
 .vscode/
 .idea/
+
+# Unfinished verifications
+uvm_verification/core/
