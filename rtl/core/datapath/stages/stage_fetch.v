@@ -18,17 +18,15 @@
 //              instruction memory
 //////////////////////////////////////////////////////////////////////////////
 
-// `include "./next_pc/next_pc.v"
-
 module stage_fetch #(
     parameter DATA_WIDTH = 32
 ) (
     clk,
+    rst,
     i_pc_target_EX,
     i_alu_result_EX,
     i_pc_src_EX,
-    i_rst_IF,
-    i_en_IF,
+    i_stall_IF,
     o_pcplus4_IF,
     o_pc_IF
 );
@@ -37,34 +35,26 @@ module stage_fetch #(
     // ------------------------------------------
 
     input wire                  clk;
+    input wire                  rst;
     input wire [DATA_WIDTH-1:0] i_pc_target_EX;
     input wire [DATA_WIDTH-1:0] i_alu_result_EX;
     input wire [1:0]            i_pc_src_EX;
-    input wire                  i_rst_IF;
-    input wire                  i_en_IF;
+    input wire                  i_stall_IF;
 
     output wire [DATA_WIDTH-1:0] o_pc_IF;
     output wire [DATA_WIDTH-1:0] o_pcplus4_IF;
 
-
-    // ------------------------------------------
-    // Localparams
-    // ------------------------------------------
-
-    // ------------------------------------------
-    // Signals deinitions
-    // ------------------------------------------
-
     // ------------------------------------------
     // Logic
     // ------------------------------------------
+
     next_pc U_NEXT_PC (
         .clk             (clk),
+        .rst             (rst),
         .i_pc_target_EX  (i_pc_target_EX),
         .i_pc_src_EX     (i_pc_src_EX),
         .i_alu_result_EX (i_alu_result_EX),
-        .i_rst_IF        (i_rst_IF),
-        .i_en_IF         (i_en_IF),
+        .i_stall_IF      (i_stall_IF),
         .o_pcplus4_IF    (o_pcplus4_IF),
         .o_pc_IF         (o_pc_IF)
     );

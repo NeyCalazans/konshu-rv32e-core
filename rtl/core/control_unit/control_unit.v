@@ -18,8 +18,6 @@
 //              opcode decoder and the ALU decoder in order to become de complete
 //              control unit. 
 ////////////////////////////////////////////////////////////////////////////////
-// `include "./op_decoder/op_decoder.v"
-// `include "./alu_decoder/alu_decoder.v"
 module control_unit (
     i_op,
     i_funct_3,
@@ -66,7 +64,7 @@ module control_unit (
     output wire [2:0] o_imm_src_ID;
 
     // ------------------------------------------
-    // Signals
+    // Signal Dclaration
     // ------------------------------------------
     
     wire [2:0] alu_op;
@@ -76,19 +74,19 @@ module control_unit (
     // ------------------------------------------
 
     op_decoder U_OP_DECODER (
-        .i_op(i_op),
-        .i_funct_3(i_funct_3),
-        .i_funct_7_5(i_funct_7_5),
-        .o_jump_ID(o_jump_ID),
-        .o_branch_ID(o_branch_ID),
-        .o_reg_write_ID(o_reg_write_ID),
+        .i_op           (i_op),
+        .i_funct_3      (i_funct_3),
+        .i_funct_7_5    (i_funct_7_5),
+        .o_jump_ID      (o_jump_ID),
+        .o_branch_ID    (o_branch_ID),
+        .o_reg_write_ID (o_reg_write_ID),
         .o_result_src_ID(o_result_src_ID),
-        .o_mem_write_ID(o_mem_write_ID),
-        .o_alu_src_ID(o_alu_src_ID),
-        .o_auipc_ID(o_auipc_ID),
-        .o_imm_src_ID(o_imm_src_ID),
-        .o_alu_op(alu_op),
-        .o_addr_src_ID(o_addr_src_ID)
+        .o_mem_write_ID (o_mem_write_ID),
+        .o_alu_src_ID   (o_alu_src_ID),
+        .o_auipc_ID     (o_auipc_ID),
+        .o_imm_src_ID   (o_imm_src_ID),
+        .o_alu_op       (alu_op),
+        .o_addr_src_ID  (o_addr_src_ID)
     );
 
     // ------------------------------------------
@@ -96,9 +94,9 @@ module control_unit (
     // ------------------------------------------
 
     alu_decoder U_ALU_DECODER (
-        .i_alu_op(alu_op),
-        .i_funct_3(i_funct_3),
-        .i_funct_7_5(i_funct_7_5),
+        .i_alu_op     (alu_op),
+        .i_funct_3    (i_funct_3),
+        .i_funct_7_5  (i_funct_7_5),
         .o_alu_ctrl_ID(o_alu_ctrl_ID)
     );
 

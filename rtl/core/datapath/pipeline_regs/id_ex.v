@@ -23,6 +23,7 @@ module id_ex #(
     parameter REG_WIDTH  = 4
 ) (
     clk,
+    rst,
     i_rd_ID,
     i_rs1_ID,
     i_rs2_ID,
@@ -41,7 +42,6 @@ module id_ex #(
     i_alu_src_ID,
     i_auipc_ID,
     i_funct_3_ID,
-    i_clear,
     o_rd_EX,
     o_rs1_EX,
     o_rs2_EX,
@@ -66,8 +66,10 @@ module id_ex #(
     // ------------------------------------------
     // IO declaration
     // ------------------------------------------
+
     input wire                  clk;
-    input wire [REG_WIDTH-1:0]  i_rd_ID;  // Datapath
+    input wire                  rst;  
+    input wire [REG_WIDTH-1:0]  i_rd_ID;  
     input wire [DATA_WIDTH-1:0] i_rs1_ID;
     input wire [DATA_WIDTH-1:0] i_rs2_ID;
     input wire [DATA_WIDTH-1:0] i_imm_ex_ID;
@@ -75,7 +77,7 @@ module id_ex #(
     input wire [REG_WIDTH-1:0]  i_rs2Addr_ID;
     input wire [DATA_WIDTH-1:0] i_pc_ID;
     input wire [DATA_WIDTH-1:0] i_pc_plus4_ID;
-    input wire                  i_jump_ID;  // Control
+    input wire                  i_jump_ID;  
     input wire                  i_branch_ID;
     input wire                  i_addr_src_ID;
     input wire                  i_reg_write_ID;
@@ -85,9 +87,8 @@ module id_ex #(
     input wire                  i_alu_src_ID;
     input wire                  i_auipc_ID;
     input wire [2:0]            i_funct_3_ID;
-    input wire                  i_clear;  // Hazard
 
-    output reg [REG_WIDTH-1:0]  o_rd_EX;  // Datapath
+    output reg [REG_WIDTH-1:0]  o_rd_EX;  
     output reg [DATA_WIDTH-1:0] o_rs1_EX;
     output reg [DATA_WIDTH-1:0] o_rs2_EX;
     output reg [DATA_WIDTH-1:0] o_imm_ex_EX;
@@ -95,7 +96,7 @@ module id_ex #(
     output reg [REG_WIDTH-1:0]  o_rs2Addr_EX;
     output reg [DATA_WIDTH-1:0] o_pc_EX;
     output reg [DATA_WIDTH-1:0] o_pc_plus4_EX;
-    output reg                  o_jump_EX;  // Control
+    output reg                  o_jump_EX;  
     output reg                  o_branch_EX;
     output reg                  o_addr_src_EX;
     output reg                  o_reg_write_EX;
@@ -109,9 +110,9 @@ module id_ex #(
     // ------------------------------------------
     // Logic
     // ------------------------------------------
+
     always @(posedge clk) begin
-        if (i_clear) begin
-            // Clear the pipeline registers
+        if (rst) begin
             o_rd_EX         <= 4'b0;
             o_rs1_EX        <= 32'b0;
             o_rs2_EX        <= 32'b0;
@@ -132,7 +133,6 @@ module id_ex #(
             o_funct_3_EX    <= 3'b0;
         end
         else begin
-            // Update the pipeline registers
             o_rd_EX         <= i_rd_ID;
             o_rs1_EX        <= i_rs1_ID;
             o_rs2_EX        <= i_rs2_ID;
@@ -152,6 +152,5 @@ module id_ex #(
             o_auipc_EX      <= i_auipc_ID;
             o_funct_3_EX    <= i_funct_3_ID;
         end
-
     end
 endmodule

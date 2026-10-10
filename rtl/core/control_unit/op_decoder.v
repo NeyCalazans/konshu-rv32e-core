@@ -113,7 +113,7 @@ module op_decoder (
         (i_op == J_TYPE_JAL)   ? 2'b01 :  // PC + 4
         (i_op == U_TYPE_LUI)   ? 2'b00 :  // ALU result: add: 0 + imm ({upimm, 12'b0})
         (i_op == U_TYPE_AUIPC) ? 2'b11 :  // next_pc result: add: PC + imm ({upimm, 12'b0})
-        2'bxx;  // bx
+        2'b00;  // Changed to 00, to avoid undefined behavior
 
 
     assign o_alu_src_ID = 

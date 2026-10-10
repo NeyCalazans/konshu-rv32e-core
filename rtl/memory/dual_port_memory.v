@@ -53,6 +53,8 @@ module dual_port_memory #(
     // Logic
     // ------------------------------------------
 
+    
+
     always @(posedge clk) begin
         for (i = 0; i < 4; i = i + 1) begin
             if (i_we[i]) begin

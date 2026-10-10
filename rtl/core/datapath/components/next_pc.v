@@ -22,11 +22,11 @@ module next_pc #(
     parameter DATA_WIDTH = 32
 ) (
     clk,
+    rst,
     i_pc_target_EX,
     i_pc_src_EX,
     i_alu_result_EX,
-    i_rst_IF,
-    i_en_IF,
+    i_stall_IF,
     o_pcplus4_IF,
     o_pc_IF
 );
@@ -36,11 +36,11 @@ module next_pc #(
     // ------------------------------------------
 
     input wire                  clk;
+    input wire                  rst;
     input wire [DATA_WIDTH-1:0] i_pc_target_EX;  //todo: cut signal LSB outside this block
     input wire [1:0]            i_pc_src_EX;
     input wire [DATA_WIDTH-1:0] i_alu_result_EX;
-    input wire                  i_rst_IF;
-    input wire                  i_en_IF;
+    input wire                  i_stall_IF;
 
     output wire [DATA_WIDTH-1:0] o_pc_IF;
     output wire [DATA_WIDTH-1:0] o_pcplus4_IF;
@@ -59,7 +59,7 @@ module next_pc #(
     // Logic
     // ------------------------------------------
 
-    assign pc_target_word = {i_pc_target_EX[DATA_WIDTH-1:2], 2'b00};
+    assign pc_target_word  = {i_pc_target_EX[DATA_WIDTH-1:2], 2'b00};
     assign alu_target_word = {i_alu_result_EX[DATA_WIDTH-1:1], 1'b0};
     
     // next pc origin
@@ -72,12 +72,12 @@ module next_pc #(
         endcase
     end
 
-    always @(posedge clk or posedge i_rst_IF) begin
-        if (i_rst_IF) begin
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
             current_pc <= 32'h0;
             pc_plus_4  <= 32'h4;
         end else begin
-            if (i_en_IF) begin
+            if (!i_stall_IF) begin
                 current_pc <= muxed_input;  // Load the muxed input
                 pc_plus_4  <= muxed_input + 32'h4;  // PC+4 
             end

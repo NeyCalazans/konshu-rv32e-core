@@ -18,12 +18,9 @@
 //              extend_unit and the register_file.
 //////////////////////////////////////////////////////////////////////////////
 
-// `include "./extend_unit/extend_unit.v"
-// `include "./register_file/register_file.v"
-
 module stage_decode (
     clk,
-    i_rst_ID,
+    rst,
     i_instr_ID,
     i_data_WB,
     i_rd_WB,
@@ -45,22 +42,22 @@ module stage_decode (
     // IO declaration
     // ------------------------------------------
 
-    input wire        clk;  // Clock input
-    input wire        i_rst_ID;  // Reset input for regiser file
-    input wire [3:0]  i_rd_WB;  // register to perform the write
-    input wire [31:0] i_instr_ID;  // Instruction ID input
-    input wire [31:0] i_data_WB;  // data to write in a register
-    input wire        i_write_en_WB;  // ennable write operation in register file
+    input wire        clk;           // Clock input
+    input wire        rst;           // Reset input for regiser file
+    input wire [3:0]  i_rd_WB;       // register to perform the write
+    input wire [31:0] i_instr_ID;    // Instruction ID input
+    input wire [31:0] i_data_WB;     // data to write in a register
+    input wire        i_write_en_WB; // ennable write operation in register file
     input wire [2:0]  i_imm_src_ID;  // 3 bits for choose which immediate extension
 
     output wire        o_funct_7_5;  // Bit 5 for func7 field   
-    output wire [4:0]  o_op;  // Opcode
-    output wire [2:0]  o_funct3;  // Field func3
-    output wire [3:0]  o_rd_ID;  //
-    output wire [3:0]  o_rs1Addr_ID;  // goes to Hazard unit
-    output wire [3:0]  o_rs2Addr_ID;  // goes to Hazard unit
-    output wire [31:0] o_rs1_ID;  // rs1 register content
-    output wire [31:0] o_rs2_ID;  // rs2 register content
+    output wire [4:0]  o_op;         // Opcode
+    output wire [2:0]  o_funct3;     // Field func3
+    output wire [3:0]  o_rd_ID; 
+    output wire [3:0]  o_rs1Addr_ID; // goes to Hazard unit
+    output wire [3:0]  o_rs2Addr_ID; // goes to Hazard unit
+    output wire [31:0] o_rs1_ID;     // rs1 register content
+    output wire [31:0] o_rs2_ID;     // rs2 register content
     output wire [31:0] o_imm_ex_ID;  // Immediate with sign extended                                
 
     // ------------------------------------------
@@ -86,7 +83,7 @@ module stage_decode (
         .INDEX_WIDTH(4)
     ) U_REGISTER_FILE (
         .clk(clk),
-        .i_rst_ID(i_rst_ID),
+        .rst(rst),
         .i_write_en_WB(i_write_en_WB),
         .i_data_WB(i_data_WB),
         .i_rd_WB(i_rd_WB),
