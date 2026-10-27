@@ -27,9 +27,14 @@ xsim.dir/
 Thumbs.db
 Desktop.ini
 
-# Outros
+# Others
 .vscode/
 .idea/
 
 # Unfinished verifications
 uvm_verifications/core/
+
+# le_mars program (binaries only)
+tb/UFSC_V/**/le_mars
+tb/UFSC_V/**/le_mars.exe
+tb/UFSC_V/**/le_mars.c
