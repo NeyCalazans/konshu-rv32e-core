@@ -1,3 +1,11 @@
+----------------------------------------------------------------------------------
+-- NOTICE:
+-- This file was originally developed by Prof. Ney Calazans and Prof. Fernando Moraes
+-- for the MIPS_S processor.
+-- It has been adapted and modified to meet the interface, timing, and architecture
+-- requirements of the UFSC_V (RISC-V RV32E) core.
+-- All original comments, history, and authorship have been preserved below.
+----------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 --
 --  The MIPS_S Simulatable Processor Testbench (Little Endian) 13/10/2004
@@ -167,10 +175,10 @@ entity RAM_mem is
 	-- MODIFIED: hw (halfword-write) signal in the portmap.
 	-- MODIFIED: changed the data signal from inout form to
 	-- 			 two separate ports (input and output).
-	-- MODIFIED: added clock signal for synchronous BRAM modeling.
-	port(ce, we, oe, bw, hw, clock	: in std_logic;
-		 address, data_in			: in wires32; 
-		 data_out					: out wires32);
+	port(ce, we, oe, bw, hw		: in std_logic;
+			address				: in wires32; 
+			data_in				: in wires32;
+			data_out			: out wires32);
 end RAM_mem;
 
 architecture RAM_mem of RAM_mem is 
@@ -188,54 +196,51 @@ architecture RAM_mem of RAM_mem is
 	--	Instruction and Data memories
 	tmp_address <= std_logic_vector (unsigned (address) - unsigned (START_ADDRESS));
    
-	-- The memory writing process - Synchronous (BRAM)
-	-- MODIFIED: changed write process to be synchronous on rising edge of clock.
-	process(clock)
+	-- The memory writing process
+	-- Asynchronous write to memory - Little Endian
+	process(ce, we, low_address, bw, hw, data_in) -- Modification here in 16/05/2012 for use
+												  -- in monocycle MIPS implementations only
+												  -- MODIFIED: added more signals to the sensitivity list.
+												  --		   This was done thinking about two consecutive stores
+												  --		   at the same address, differing only in the data to be stored
+												  --		   and the store type (halfword or byte).
 	begin
-		if rising_edge(clock) then
-			if ce='1' and we='1' then
-				if unsigned(low_address)>=0
-					and unsigned(low_address)<=MEMORY_LENGTH-3 then
-					-- MODIFIED: added the halfword store logic
-					if bw='0' and hw='0' then
-						RAM(to_integer(unsigned(low_address))+integer(3)) <= data_in(31 downto 24);
-						RAM(to_integer(unsigned(low_address))+integer(2)) <= data_in(23 downto 16);
-						RAM(to_integer(unsigned(low_address))+integer(1)) <= data_in(15 downto  8);
-						RAM(to_integer(unsigned(low_address)))            <= data_in( 7 downto  0);
-					elsif hw='1' then
-						RAM(to_integer(unsigned(low_address))+integer(1)) <= data_in(15 downto  8);
-						RAM(to_integer(unsigned(low_address)))            <= data_in( 7 downto  0);
-					elsif bw='1' then
-						RAM(to_integer(unsigned(low_address))) <= data_in( 7 downto  0);
-
-					end if;
+		if ce='1' and we='1' then
+			if unsigned(low_address)>=0
+				and unsigned(low_address)<=MEMORY_LENGTH-3 then
+				-- MODIFIED: added the halfword store logic
+				if bw='0' and hw='0' then
+					RAM(to_integer(unsigned(low_address))+integer(3)) <= data_in(31 downto 24);
+					RAM(to_integer(unsigned(low_address))+integer(2)) <= data_in(23 downto 16);
+					RAM(to_integer(unsigned(low_address))+integer(1)) <= data_in(15 downto  8);
+					RAM(to_integer(unsigned(low_address)))            <= data_in( 7 downto  0);
+				elsif hw='1' then
+					RAM(to_integer(unsigned(low_address))+integer(1)) <= data_in(15 downto  8);
+					RAM(to_integer(unsigned(low_address)))            <= data_in( 7 downto  0);
+				elsif bw='1' then
+					RAM(to_integer(unsigned(low_address))) <= data_in( 7 downto  0);
 
 				end if;
+
 			end if;
 		end if;
 	end process;
 
     
-	-- The memory reading process - Synchronous (BRAM)
-	-- MODIFIED: changed read process to be synchronous on rising edge of clock.
-	process(clock)
+	-- The memory reading process - always reads 32 bits
+	process(ce, oe, low_address)
 	begin
-		if rising_edge(clock) then
-			if (ce='1' and oe='1' and
-				(to_integer(unsigned(low_address)))>=0 and (to_integer(unsigned(low_address)))<=MEMORY_LENGTH-3) then
-					data_out(31 downto 24) <= RAM(to_integer(unsigned(low_address))+integer(3));
-					data_out(23 downto 16) <= RAM(to_integer(unsigned(low_address))+integer(2));
-					data_out(15 downto  8) <= RAM(to_integer(unsigned(low_address))+integer(1));
-					data_out( 7 downto  0) <= RAM(to_integer(unsigned(low_address)));
-			-- MODIFIED: commented the impiedance association to imitate the BRAM behavior.
-			--			 This was also made due to the stall/chip enable association made to the core.
-			--			 If the stall is on, the Ice is off, and in that case, the previous output is wanted.
-			--else
-				--data_out(31 downto 24) <= (others=>'Z');
-				--data_out(23 downto 16) <= (others=>'Z');
-				--data_out(15 downto  8) <= (others=>'Z');
-				--data_out( 7 downto  0) <= (others=>'Z');
-			end if;
+		if (ce='1' and oe='1' and
+			(to_integer(unsigned(low_address)))>=0 and (to_integer(unsigned(low_address)))<=MEMORY_LENGTH-3) then
+				data_out(31 downto 24) <= RAM(to_integer(unsigned(low_address))+integer(3));
+				data_out(23 downto 16) <= RAM(to_integer(unsigned(low_address))+integer(2));
+				data_out(15 downto  8) <= RAM(to_integer(unsigned(low_address))+integer(1));
+				data_out( 7 downto  0) <= RAM(to_integer(unsigned(low_address)));
+		else
+			data_out(31 downto 24) <= (others=>'Z');
+			data_out(23 downto 16) <= (others=>'Z');
+			data_out(15 downto  8) <= (others=>'Z');
+			data_out( 7 downto  0) <= (others=>'Z');
 		end if;
 	end process;   
 
@@ -264,7 +269,7 @@ architecture cpu_tb of cpu_tb is
 
 	-- MODIFIED: added the hw signal to the signal declaration.
     signal Dce, Dwe, Doe, Ice, Iwe, Ioe, ck, rst, rstCPU,
-           go_i, go_d, ce, instr_ce_cpu, rw, bw, hw, suspend, suspend_ack	: std_logic;
+           go_i, go_d, ce, rw, bw, hw, suspend, suspend_ack	: std_logic;
 	-- MODIFIED: write_M carries o_mem_write_M as-is (1 = write); rw keeps the
 	--			 old MIPS_S polarity (1 = read) for the rest of the glue logic
 	--			 below, via the "rw <= not write_M;" assignment.
@@ -281,18 +286,17 @@ begin
 	--			Added the data_in/out signals.
 	--			Data memory now starts at 0x00002000 (compact memory) and has only 8KB.
 	--			Instructions memory now starts at 0x00000000 (compact memory) and has 4KB.
-	--			Connected clock signal (ck) to Data_mem and Instr_mem.
     Data_mem:  entity work.RAM_mem 
 				generic map(START_ADDRESS => x"00002000", 
 							MEMORY_LENGTH => 8192)	-- New in 05/06/2026 32K+1bytes
-				port map (clock=>ck, ce=>Dce, we=>Dwe, oe=>Doe, 
+				port map (ce=>Dce, we=>Dwe, oe=>Doe, 
 							bw=>bw, hw=>hw, address=>Dadress, 
 							data_in=>Ddata_in, data_out=>Ddata_out);
 
     Instr_mem: entity work.RAM_mem 
                generic map(START_ADDRESS => x"00000000",
 			   			   MEMORY_LENGTH => 4096)
-               port map (clock=>ck, ce=>Ice, we=>Iwe, oe=>Ioe,
+               port map (ce=>Ice, we=>Iwe, oe=>Ioe,
 							bw=>'0', hw=>'0', address=>Iaddress, 
 							data_in=>Idata_in, data_out=>Idata_out);
 
@@ -305,8 +309,11 @@ begin
 	--			 of rw (1=read), which the rest of this glue logic still uses.
 	rw <= not write_M;
     Doe <= '1' when (ce='1' and rw='1')							else '0';
-	-- MODIFIED: removed the ck = 0 condition, as memory write is now synchronous on clock edge.
-    Dwe <= '1' when (ce='1' and rw='0') or go_d='1'				else '0';    
+	-- MODIFIED: added the ck = 0 condition. When accessing the memory in two consecutive
+	--			 instructions, this signal would take a delta time to change, whereas the 
+	--			 low_address variable would change instantly. This condition adds a delay to enable
+	--			 the write signal, preventing that.
+    Dwe <= '1' when (ce='1' and rw='0' and ck='0') or go_d='1'	else '0';    
 
     Dadress <= tb_add  when rstCPU='1' else d_cpu_address;
 	--MODIFIED: Ddata_in/data_cpu_out instead of Ddata/data_cpu.
@@ -314,18 +321,12 @@ begin
 				else data_cpu_out when (ce='1' and rw='0') 
 				else (others=>'Z'); 
     --MODIFIED: Ddata_out/data_cpu_in instead of Ddata/data_cpu.
-	--MODIFIED: Removed the previous conditions. The BRAM needs to hold the previous
-	--			data, and the RAM itself (in the testbench) already prevents reading/writing
-	--			withou the ce and rw signals.
-    data_cpu_in <= Ddata_out;
+    data_cpu_in <= Ddata_out when (ce='1' and rw='1') else (others=>'Z');
     
     -- Signals and glue logic to adapt the Instruction Memory
 	--	to the MIPS_S interface
 	---------------------------------------------------------------------------
-	-- MODIFIED: due to the change of asynchronous to synchronous memories, the stall logic
-	--			 of the core was changed, and its associated with the instruction memory
-	--			 chip enable signal.
-    Ice <= '1' when (rstCPU='1' or go_i='1') else instr_ce_cpu;                              
+    Ice <= '1';                                 
     Ioe <= '0' when rstCPU='1' else '1';
 	-- Avoids reading to occur while writing in memory                             
     Iwe <= '1' when go_i='1'   else '0';
@@ -340,7 +341,6 @@ begin
 				clk=>ck, 
 				rst=>rstCPU,
 				o_mem_access_M=>ce,
-				o_ce_IF=>instr_ce_cpu,
 				o_mem_write_M=>write_M,
 				o_bw_M=>bw,
 				o_hw_M=>hw,
@@ -439,8 +439,7 @@ begin
 								-- Signal go_d enables writing
 								-- 	in the Data Memory.
 							end if; 
-							-- MODIFIED: wait until rising_edge(ck) to synchronize file loading with BRAM clock.
-							wait until rising_edge(ck);
+							wait for 0.1 ns;
 							tb_add <= std_logic_vector(unsigned(tb_add) + integer(4)); 
 							-- OK, it is possible to read more than
 							-- 	one pair (address,data) per line!

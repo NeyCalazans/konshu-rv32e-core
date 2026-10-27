@@ -19,7 +19,7 @@ The result of the UVM verification, in this case, is a log with the PASS/FAIL st
 The architecture developed for this verification consists of the following elements:
 
 
-![UVM architecture](images/uvm_architecture.png)
+![UVM architecture](../assets/uvm_architecture.png)
 
 | Element | Role |
 | --- | --- |

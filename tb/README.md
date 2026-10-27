@@ -69,7 +69,7 @@ In the testbench (`UFSC_V_Sim_tb.vhd`), the high-impedance (`'Z'`) condition whe
 
 Here is an example of this bug occurring during the testbench execution, where the high-impedance (`Z`) state on the memory output caused undefined (`X`) data to be written back to the register file:
 
-![BRAM high-impedance bug during load write-back](./images/second_bug.png)
+![BRAM high-impedance bug during load write-back](../assets/second_bug.png)
 
 Branch and jump instructions were also presenting errors. Because of the 1-cycle BRAM read latency, the core was still executing the sequential instruction following a taken branch or jump, even with a 1-cycle flush. Basically, an extra clock cycle with the instruction flushed to `NOP` was needed while the BRAM fetched the target address. To achieve this, the `pcSrc` signal was propagated through the `ex_mem` pipeline register (`o_pcSrc_M`) to the `hazard_unit`, generating a second flush signal (`o_flush_M`). The instruction multiplexer in `datapath.v` uses `rst | flush_ID | flush_M` to force `instr_ID` to `NOP` for two cycles, while the `if_id` register reset continues to use only `rst | flush_ID` so it can latch the new branch target `PC` on the second cycle.
 
