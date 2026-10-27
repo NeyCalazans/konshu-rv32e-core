@@ -28,7 +28,8 @@ module register_file #(
     i_write_en_WB,
     i_data_WB,
     i_rd_WB,
-    i_instr_ID,
+    i_rs1Addr_ID,
+    i_rs2Addr_ID,
     o_rs1_ID,
     o_rs2_ID
 );
@@ -42,7 +43,8 @@ module register_file #(
     input wire                   i_write_en_WB;  // determine write operation is enabled
     input wire [DATA_WIDTH-1:0]  i_data_WB;      // data to be written
     input wire [INDEX_WIDTH-1:0] i_rd_WB;        // determine the register to be written
-    input wire [DATA_WIDTH-1:0]  i_instr_ID;     // determine the registers to be read
+    input wire [INDEX_WIDTH-1:0] i_rs1Addr_ID;     // determine the registers to be read
+    input wire [INDEX_WIDTH-1:0] i_rs2Addr_ID;     // determine the registers to be read
 
     output reg [DATA_WIDTH-1:0] o_rs1_ID;
     output reg [DATA_WIDTH-1:0] o_rs2_ID;
@@ -76,11 +78,15 @@ module register_file #(
 
     // reading takes place in the second half of the clock cycle (second semicircle)
     always @(negedge clk) begin
-        o_rs1_ID <= (i_instr_ID[18:15] == 5'b0) ? {DATA_WIDTH{1'b0}} :
-                      (i_write_en_WB && (i_instr_ID[18:15] == i_rd_WB)) ? i_data_WB : registers[i_instr_ID[18:15]];
+        if (rst) begin
+            o_rs1_ID <= {DATA_WIDTH{1'b0}};
+            o_rs2_ID <= {DATA_WIDTH{1'b0}};
+        end
+        o_rs1_ID <= (i_rs1Addr_ID == 4'b0) ? {DATA_WIDTH{1'b0}} :
+                      (i_write_en_WB && (i_rs1Addr_ID == i_rd_WB)) ? i_data_WB : registers[i_rs1Addr_ID];
     
-        o_rs2_ID <= (i_instr_ID[23:20] == 5'b0) ? {DATA_WIDTH{1'b0}} :
-                      (i_write_en_WB && (i_instr_ID[23:20] == i_rd_WB)) ? i_data_WB : registers[i_instr_ID[23:20]];
+        o_rs2_ID <= (i_rs2Addr_ID == 4'b0) ? {DATA_WIDTH{1'b0}} :
+                      (i_write_en_WB && (i_rs2Addr_ID == i_rd_WB)) ? i_data_WB : registers[i_rs2Addr_ID];
 
     end
 

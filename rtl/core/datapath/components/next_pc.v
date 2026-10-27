@@ -72,7 +72,7 @@ module next_pc #(
         endcase
     end
 
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk) begin
         if (rst) begin
             current_pc <= 32'h0;
             pc_plus_4  <= 32'h4;

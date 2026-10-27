@@ -21,6 +21,7 @@
 module hazard_unit #(
     parameter REG_WIDTH = 4
 ) (
+    rst,
     i_rs1Addr_ID,
     i_rs2Addr_ID,
     i_rdAddr_EX,
@@ -33,13 +34,19 @@ module hazard_unit #(
     i_rdAddr_WB,
     i_reg_write_WB,
     i_pcSrc_M,
+    i_suspend,
+    o_suspend_ack,
     o_stall_IF,
-    o_stall_ID,
-    o_flush_EX,
-    o_flush_ID,
-    o_flush_M,
+    o_stall_IF_ID,
+    o_stall_ID_EX,
+    o_stall_EX_M,
+    o_stall_M_WB,
+    o_flush_IF_ID,
+    o_flush_ID_EX,
+    o_flush_instr_ID,
     o_forward_rs1_EX,
-    o_forward_rs2_EX
+    o_forward_rs2_EX,
+    o_ce_IF
 );
 
 
@@ -47,7 +54,8 @@ module hazard_unit #(
     // IO declaration
     // ------------------------------------------
 
-    input wire [REG_WIDTH-1:0] i_rs1Addr_ID;    // Decode Stage
+    input wire                 rst;
+    input wire [REG_WIDTH-1:0] i_rs1Addr_ID;     // Decode Stage
     input wire [REG_WIDTH-1:0] i_rs2Addr_ID;
     input wire [REG_WIDTH-1:0] i_rdAddr_EX;
     input wire [REG_WIDTH-1:0] i_rs1Addr_EX;     // Used for Data Hazards with forwading -> Used to check if any of the address of the source registers for the instruction at the Execute stage is the same address of a destination register in the Memory or WriteBack Stages 
@@ -59,12 +67,18 @@ module hazard_unit #(
     input wire                 i_reg_write_M;    // Used for Data Hazards with forwading -> Try to avoid false data hazards such as in 'sw' and 'beq' instructions when any writings in the RegFile happens                 
     input wire [REG_WIDTH-1:0] i_rdAddr_WB;      // Used for Data Hazards with forwading -> Used to check if there any data dependencies between the instruction in the beginning of the WriteBack stage and the one in Execute Stage
     input wire                 i_reg_write_WB;   // Used for Data Hazards with forwading -> Try to avoid false data hazards such as in 'sw' and 'beq' instructions when any writings in the RegFile happens
+    input wire                 i_suspend;        // Request pipeline stall from external peripheral/system
+    output wire                o_suspend_ack;    // Acknowledge pipeline freeze to external peripheral/system
 
     output wire      o_stall_IF;
-    output wire      o_stall_ID;
-    output wire      o_flush_ID;        // Used for Control Hazards
-    output wire      o_flush_EX;
-    output wire      o_flush_M;
+    output wire      o_stall_IF_ID;
+    output wire      o_stall_ID_EX;
+    output wire      o_stall_EX_M;
+    output wire      o_stall_M_WB;
+    output wire      o_flush_IF_ID;     // Used for Control Hazards
+    output wire      o_flush_ID_EX;
+    output wire      o_flush_instr_ID;
+    output wire      o_ce_IF;           // Chip enable for the instruction memory
     output reg [1:0] o_forward_rs1_EX;  // Used for Data Hazards with forwading -> Select signal for the MUX of the input A of ALU to select between the data at Memory Stage or WriteBack (forwading data)
     output reg [1:0] o_forward_rs2_EX;  // Used for Data Hazards with forwading -> Select signal for the MUX of the input B of ALU to select between the data at Memory Stage or WriteBack (forwading data)
 
@@ -109,16 +123,22 @@ module hazard_unit #(
         end
     end
 
-    // Stall to solve load hazards
+    // Stall to solve load hazards and handle system suspend
     // The stall is implemented if there is a load and a dependecy in the pipeline,
-    // or if there is just a load (synchronous memory)
+    // or if there is just a load (synchronous memory), or external suspend
     assign load_hazard_detect = (i_result_src_EX === 2'b10);
-    assign o_stall_IF         = load_hazard_detect;
-    assign o_stall_ID         = load_hazard_detect;
+    assign o_stall_IF         = load_hazard_detect | i_suspend;
+    assign o_stall_IF_ID      = load_hazard_detect | i_suspend;
+    assign o_stall_ID_EX      = i_suspend;
+    assign o_stall_EX_M       = i_suspend;
+    assign o_stall_M_WB       = i_suspend;
+    assign o_suspend_ack      = i_suspend;
+    assign o_ce_IF            = !o_stall_IF;
 
-    // Flush when a branch is taken or a load introduces a bubble
-    assign o_flush_ID = (i_pcSrc_EX[0] === 1'b1);
-    assign o_flush_M  = (i_pcSrc_M[0] === 1'b1);
-    assign o_flush_EX = load_hazard_detect | o_flush_ID;
+    // Flush when a branch is taken or a load introduces a bubble (do not flush on suspend stall)
+    assign o_flush_IF_ID = ((i_pcSrc_EX[0] === 1'b1) & !i_suspend) | rst;
+    assign o_flush_ID_EX = ((load_hazard_detect | (i_pcSrc_EX[0] === 1'b1)) & !i_suspend) | rst;
+    assign o_flush_instr_ID = o_flush_IF_ID | ((i_pcSrc_M[0] === 1'b1) & !i_suspend);
+    
 
 endmodule

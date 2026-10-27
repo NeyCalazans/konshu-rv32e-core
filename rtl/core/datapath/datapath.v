@@ -38,7 +38,7 @@ module datapath #(
     i_imm_src_ID,
     i_instr_IF,
     i_read_data_M,
-    o_ce_IF,
+    o_instr_ce_IF,
     o_jump_EX,
     o_branch_EX,
     o_addr_src_EX,
@@ -47,12 +47,14 @@ module datapath #(
     o_bw_M,
     o_hw_M,
     o_data_addr_M,
-    o_mem_access_M,
+    o_data_ce_M,
     o_mem_write_M,
     o_op,
     o_funct3,
     o_funct_7_5,
-    o_pc_IF
+    o_pc_IF,
+    i_suspend,
+    o_suspend_ack
 );
 
 
@@ -77,7 +79,7 @@ module datapath #(
     input wire [DATA_WIDTH-1:0] i_read_data_M;
 
     output wire                  o_jump_EX;
-    output wire                  o_ce_IF;
+    output wire                  o_instr_ce_IF;
     output wire                  o_branch_EX;
     output wire                  o_addr_src_EX;
     output wire                  o_zero;
@@ -89,8 +91,10 @@ module datapath #(
     output wire [2:0]            o_funct3;
     output wire                  o_funct_7_5;
     output wire [DATA_WIDTH-1:0] o_pc_IF;
-    output wire                  o_mem_access_M;  // Equivalent to "ce" signal for the MIPS_S
+    output wire                  o_data_ce_M;     // Equivalent to "ce" signal for the MIPS_S
     output wire                  o_mem_write_M;   // Equivalent to "rw"/"we" signal for the MIPS_S
+    input  wire                  i_suspend;
+    output wire                  o_suspend_ack;
 
     // ------------------------------------------
     // Signals deinitions
@@ -102,13 +106,16 @@ module datapath #(
 
     // ID
     wire [DATA_WIDTH-1:0] pc_ID;
-    wire [DATA_WIDTH-1:0] instr_ID; 
+    wire                  flush_instr_ID; 
     wire [DATA_WIDTH-1:0] pcplus4_ID;
     wire [DATA_WIDTH-1:0] imm_ex_ID;
     wire [DATA_WIDTH-1:0] rs1_ID;
     wire [DATA_WIDTH-1:0] rs2_ID;
-    wire                  flush_ID;
-    wire                  stall_ID;
+    wire                  flush_IF_ID;
+    wire                  stall_IF_ID;
+    wire                  stall_ID_EX;
+    wire                  stall_EX_M;
+    wire                  stall_M_WB;
     wire [3:0]            rs1Addr_ID;
     wire [3:0]            rs2Addr_ID;
     wire [3:0]            rd_ID;
@@ -131,7 +138,7 @@ module datapath #(
     wire                  mem_write_EX; 
     wire                  alu_src_EX;
     wire                  auipc_EX;
-    wire                  flush_EX;
+    wire                  flush_ID_EX;
     wire [1:0]            forward_rs1_EX;
     wire [1:0]            forward_rs2_EX;
     wire [2:0]            funct_3_EX;
@@ -146,7 +153,6 @@ module datapath #(
     wire                  reg_write_M;
     wire                  mem_write_M;
     wire [2:0]            funct_3_M;
-    wire                  flush_M;
     wire [1:0]            pc_src_M;
 
     // WB
@@ -177,42 +183,40 @@ module datapath #(
 
     // IF/ID Pipeline Register
     if_id U_IF_ID (
-        .clk         (clk),
-        .rst         (rst | flush_ID),  
-        .i_stall_ID  (stall_ID),
-        .i_pc_IF     (o_pc_IF),
-        .i_pcplus4_IF(pcplus4_IF),
-        .o_pc_ID     (pc_ID),
-        .o_pcplus4_ID(pcplus4_ID)
+        .clk          (clk),
+        .rst          (flush_IF_ID),  
+        .i_stall_IF_ID(stall_IF_ID),
+        .i_pc_IF      (o_pc_IF),
+        .i_pcplus4_IF (pcplus4_IF),
+        .o_pc_ID      (pc_ID),
+        .o_pcplus4_ID (pcplus4_ID)
     );
-
-    // Flush logic
-    assign instr_ID = (rst | flush_ID | flush_M) ? 32'h00000033 : i_instr_IF;
-    assign o_ce_IF  = !stall_IF;
 
     // Decode Stage
     stage_decode U_STAGE_DECODE (
-        .clk          (clk),
-        .rst          (rst),
-        .i_instr_ID   (instr_ID),
-        .i_data_WB    (result_WB),
-        .i_rd_WB      (rd_WB),
-        .i_write_en_WB(reg_write_WB),
-        .i_imm_src_ID (i_imm_src_ID),
-        .o_op         (o_op),
-        .o_funct3     (o_funct3),
-        .o_funct_7_5  (o_funct_7_5),
-        .o_rd_ID      (rd_ID),
-        .o_rs1_ID     (rs1_ID),
-        .o_rs2_ID     (rs2_ID),
-        .o_rs1Addr_ID (rs1Addr_ID),
-        .o_rs2Addr_ID (rs2Addr_ID),
-        .o_imm_ex_ID  (imm_ex_ID)
+        .clk             (clk),
+        .rst             (rst),
+        .i_instr_IF      (i_instr_IF),
+        .i_data_WB       (result_WB),
+        .i_rd_WB         (rd_WB),
+        .i_write_en_WB   (reg_write_WB),
+        .i_imm_src_ID    (i_imm_src_ID),
+        .i_flush_instr_ID(flush_instr_ID),
+        .o_op            (o_op),
+        .o_funct3        (o_funct3),
+        .o_funct_7_5     (o_funct_7_5),
+        .o_rd_ID         (rd_ID),
+        .o_rs1_ID        (rs1_ID),
+        .o_rs2_ID        (rs2_ID),
+        .o_rs1Addr_ID    (rs1Addr_ID),
+        .o_rs2Addr_ID    (rs2Addr_ID),
+        .o_imm_ex_ID     (imm_ex_ID)
     );
 
     id_ex U_ID_EX (
         .clk            (clk),
-        .rst            (rst | flush_EX), 
+        .rst            (flush_ID_EX), 
+        .i_stall_ID_EX  (stall_ID_EX),
         .i_rd_ID        (rd_ID),
         .i_rs1_ID       (rs1_ID),
         .i_rs2_ID       (rs2_ID),
@@ -274,6 +278,7 @@ module datapath #(
     ex_mem U_EX_MEM (
         .clk            (clk),
         .rst            (rst),
+        .i_stall_EX_M   (stall_EX_M),
         .i_reg_write_EX (reg_write_EX),
         .i_result_src_EX(result_src_EX),
         .i_mem_write_EX (mem_write_EX),
@@ -297,23 +302,25 @@ module datapath #(
     );
 
     // Memory Access Stage
-    assign o_data_addr_M        = alu_result_M;
-    assign o_write_data_aligned_M = write_data_M;
-    assign o_mem_access_M = mem_write_M | (result_src_M == 2'b10);
-    assign o_mem_write_M  = mem_write_M;
-
-    // Store align module for writing in memory with store type instructions
-    store_align U_STORE_ALIGN (
-        .i_mem_write_M(mem_write_M),
-        .i_funct_3    (funct_3_M),
-        .o_bw_M       (o_bw_M),
-        .o_hw_M       (o_hw_M)
+    stage_memory U_STAGE_MEMORY (
+        .i_alu_result_M         (alu_result_M),
+        .i_write_data_M         (write_data_M),
+        .i_mem_write_M          (mem_write_M),
+        .i_result_src_M         (result_src_M),
+        .i_funct_3_M            (funct_3_M),
+        .o_data_addr_M          (o_data_addr_M),
+        .o_write_data_aligned_M (o_write_data_aligned_M),
+        .o_data_ce_M            (o_data_ce_M),
+        .o_mem_write_M          (o_mem_write_M),
+        .o_bw_M                 (o_bw_M),
+        .o_hw_M                 (o_hw_M)
     );
 
     // MEM/WB Pipeline Register
     mem_wb U_MEM_WB (
         .clk            (clk),
         .rst            (rst),  
+        .i_stall_M_WB   (stall_M_WB),
         .i_alu_result_M (alu_result_M),
         .i_pc_target_M  (pc_target_M),
         .i_pc_plus4_M   (pcplus4_M),
@@ -343,6 +350,7 @@ module datapath #(
 
     // Hazard Detection Unit
     hazard_unit U_HAZARD_UNIT (
+        .rst             (rst),
         .i_rs1Addr_ID    (rs1Addr_ID),
         .i_rs2Addr_ID    (rs2Addr_ID),
         .i_rdAddr_EX     (rd_EX),
@@ -355,13 +363,19 @@ module datapath #(
         .i_reg_write_M   (reg_write_M),
         .i_rdAddr_WB     (rd_WB),
         .i_reg_write_WB  (reg_write_WB),
+        .i_suspend       (i_suspend),
+        .o_suspend_ack   (o_suspend_ack),
         .o_stall_IF      (stall_IF),
-        .o_stall_ID      (stall_ID),
-        .o_flush_ID      (flush_ID),
-        .o_flush_EX      (flush_EX),
-        .o_flush_M       (flush_M),
+        .o_stall_IF_ID   (stall_IF_ID),
+        .o_stall_ID_EX   (stall_ID_EX),
+        .o_stall_EX_M    (stall_EX_M),
+        .o_stall_M_WB    (stall_M_WB),
+        .o_flush_IF_ID   (flush_IF_ID),
+        .o_flush_ID_EX   (flush_ID_EX),
+        .o_flush_instr_ID(flush_instr_ID),
         .o_forward_rs1_EX(forward_rs1_EX),
-        .o_forward_rs2_EX(forward_rs2_EX)
+        .o_forward_rs2_EX(forward_rs2_EX),
+        .o_ce_IF         (o_instr_ce_IF)
     );
 
 endmodule

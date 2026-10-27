@@ -24,6 +24,7 @@ module id_ex #(
 ) (
     clk,
     rst,
+    i_stall_ID_EX,
     i_rd_ID,
     i_rs1_ID,
     i_rs2_ID,
@@ -69,6 +70,7 @@ module id_ex #(
 
     input wire                  clk;
     input wire                  rst;  
+    input wire                  i_stall_ID_EX;
     input wire [REG_WIDTH-1:0]  i_rd_ID;  
     input wire [DATA_WIDTH-1:0] i_rs1_ID;
     input wire [DATA_WIDTH-1:0] i_rs2_ID;
@@ -132,7 +134,7 @@ module id_ex #(
             o_auipc_EX      <= 1'b0;
             o_funct_3_EX    <= 3'b0;
         end
-        else begin
+        else if (!i_stall_ID_EX) begin
             o_rd_EX         <= i_rd_ID;
             o_rs1_EX        <= i_rs1_ID;
             o_rs2_EX        <= i_rs2_ID;

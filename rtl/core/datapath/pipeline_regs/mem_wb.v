@@ -24,6 +24,7 @@ module mem_wb #(
 ) (
     clk,
     rst,
+    i_stall_M_WB,
     i_alu_result_M,
     i_pc_target_M,
     i_pc_plus4_M,
@@ -47,6 +48,7 @@ module mem_wb #(
 
     input wire                  clk;
     input wire                  rst;
+    input wire                  i_stall_M_WB;
     input wire [DATA_WIDTH-1:0] i_alu_result_M;  
     input wire [DATA_WIDTH-1:0] i_pc_plus4_M;
     input wire [DATA_WIDTH-1:0] i_pc_target_M;
@@ -79,7 +81,7 @@ module mem_wb #(
             o_alu_result_WB <= {DATA_WIDTH{1'b0}};  
             o_funct_3_WB    <= 3'b0;
         end
-        else begin
+        else if (!i_stall_M_WB) begin
             o_pc_target_WB  <= i_pc_target_M;
             o_pc_plus4_WB   <= i_pc_plus4_M;
             o_reg_write_WB  <= i_reg_write_M;

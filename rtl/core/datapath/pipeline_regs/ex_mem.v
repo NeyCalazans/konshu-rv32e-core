@@ -24,6 +24,7 @@ module ex_mem #(
 ) (
     clk,
     rst,
+    i_stall_EX_M,
     i_alu_result_EX,
     i_write_data_EX,
     i_pc_plus4_EX,
@@ -53,6 +54,7 @@ module ex_mem #(
 
     input wire                  clk;
     input wire                  rst;
+    input wire                  i_stall_EX_M;
     input wire [DATA_WIDTH-1:0] i_alu_result_EX;  
     input wire [DATA_WIDTH-1:0] i_write_data_EX;
     input wire [DATA_WIDTH-1:0] i_pc_plus4_EX;
@@ -92,7 +94,7 @@ module ex_mem #(
             o_funct_3_M    <= 3'b0;
             o_pcSrc_M      <= 2'b0;
         end
-        else begin
+        else if (!i_stall_EX_M) begin
             o_pc_plus4_M   <= i_pc_plus4_EX;
             o_rd_M         <= i_rd_EX;
             o_reg_write_M  <= i_reg_write_EX;

@@ -36,7 +36,9 @@ module UFSC_V #(
     o_mem_access_M,         // High whenever the M-stage instruction is a load or a store
     o_mem_write_M,          // High whenever the M-stage instruction is a store (write enable)
     o_ce_IF,                // Enables the instruction memory (stall)
-    i_read_data_M           // Data read from data memory
+    i_read_data_M,          // Data read from data memory
+    i_suspend,              // External pipeline suspend request
+    o_suspend_ack           // Acknowledge pipeline suspended
 );
  
     // ------------------------------------------
@@ -64,6 +66,8 @@ module UFSC_V #(
     output wire                  o_hw_M;
     output wire                  o_ce_IF;
     input  wire [DATA_WIDTH-1:0] i_read_data_M;
+    input  wire                  i_suspend;
+    output wire                  o_suspend_ack;
  
     // ------------------------------------------
     // Signal Declaration
@@ -140,7 +144,7 @@ module UFSC_V #(
         .i_imm_src_ID           (imm_src_ID),
         .i_instr_IF             (i_instr_IF),
         .i_read_data_M          (i_read_data_M),
-        .o_ce_IF                (o_ce_IF),
+        .o_instr_ce_IF          (o_ce_IF),
         .o_jump_EX              (jump_EX),
         .o_branch_EX            (branch_EX),
         .o_addr_src_EX          (addr_src_EX),
@@ -149,12 +153,14 @@ module UFSC_V #(
         .o_bw_M                 (o_bw_M),
         .o_hw_M                 (o_hw_M),
         .o_data_addr_M          (o_data_addr_M),
-        .o_mem_access_M         (o_mem_access_M),
+        .o_data_ce_M            (o_mem_access_M),
         .o_mem_write_M          (o_mem_write_M),
         .o_op                   (op),
         .o_funct3               (funct3),
         .o_funct_7_5            (funct_7_5),
-        .o_pc_IF                (o_pc_IF)
+        .o_pc_IF                (o_pc_IF),
+        .i_suspend              (i_suspend),
+        .o_suspend_ack          (o_suspend_ack)
     );
  
 endmodule

@@ -55,8 +55,9 @@ module stage_write_back #(
     load_extend #(
         .DATA_WIDTH(DATA_WIDTH)
     ) U_LOAD_EXTEND (
-        .i_funct_3(i_funct_3),
-        .i_read_data_M(i_result_data_WB),
+        .i_funct_3       (i_funct_3),
+        .i_byte_offset   (i_alu_result_WB[1:0]),
+        .i_read_data_M   (i_result_data_WB),
         .o_result_data_WB(result_data_WB)
     );
 

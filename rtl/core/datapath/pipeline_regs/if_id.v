@@ -24,7 +24,7 @@ module if_id #(
 ) (
     clk,
     rst,
-    i_stall_ID,
+    i_stall_IF_ID,
     i_pc_IF,
     o_pc_ID,
     i_pcplus4_IF,
@@ -39,7 +39,7 @@ module if_id #(
     input wire                  rst;
     input wire [DATA_WIDTH-1:0] i_pcplus4_IF;
     input wire [DATA_WIDTH-1:0] i_pc_IF;
-    input wire                  i_stall_ID;
+    input wire                  i_stall_IF_ID;
 
     output reg [DATA_WIDTH-1:0] o_pcplus4_ID;
     output reg [DATA_WIDTH-1:0] o_pc_ID;
@@ -54,7 +54,7 @@ module if_id #(
             o_pcplus4_ID <= 32'h00000004;
             o_pc_ID      <= 32'h0;
         end 
-        else if (!i_stall_ID) begin
+        else if (!i_stall_IF_ID) begin
             // Update the pipeline registers with new values
             o_pcplus4_ID <= i_pcplus4_IF;
             o_pc_ID      <= i_pc_IF;
